@@ -13,7 +13,7 @@ generated in code.
 |---|---|
 | 0. Scaffold: window, loop, scenes, save system, CI | ✅ |
 | 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ✅ |
-| 2. Roulette | ⏳ |
+| 2. Roulette | ✅ |
 | 3. Blackjack | ⏳ |
 | 4. Poker engine | ⏳ |
 | 5. Poker table | ⏳ |
@@ -30,6 +30,33 @@ generated in code.
 - **Procedural sound:** chip clacks, card snaps, a riffle shuffle, wheel rumble, ball
   ticks, win jingles, a big-win fanfare and a casino-floor ambience loop, all synthesised
   with numpy at start-up in a background thread.
+
+## Roulette
+
+European single-zero wheel (house edge 2.70% on every bet).
+
+| Bet | Covers | Pays |
+|---|---|---|
+| Straight | 1 number (including 0) | 35:1 |
+| Split | 2 adjacent numbers (including 0-1, 0-2, 0-3) | 17:1 |
+| Street | a row of 3 | 11:1 |
+| Trio | 0-1-2 or 0-2-3 | 11:1 |
+| Corner | 4 numbers meeting at a corner | 8:1 |
+| First four | 0-1-2-3 | 8:1 |
+| Six line | two adjacent streets | 5:1 |
+| Dozen, Column | 12 numbers | 2:1 |
+| Red/Black, Odd/Even, 1-18/19-36 | 18 numbers | 1:1 |
+
+Table limits: $1 minimum per bet, $5,000 total on the layout per spin. Zero loses all
+outside bets (no *la partage*). After each spin the layout is cleared and winnings are
+paid to your bankroll; **REBET** repeats your last bets.
+
+Click a number, line or corner to bet the selected chip there; right-click a bet to take
+it back. Keys: `1`-`6` pick a chip, `Space` spin, `Backspace` undo, `C` clear,
+`D` double, `R` rebet.
+
+The winning number is drawn by the rules engine before the wheel moves; the ball's path
+is then built backwards so it always drops into that pocket.
 
 ## Install and run
 

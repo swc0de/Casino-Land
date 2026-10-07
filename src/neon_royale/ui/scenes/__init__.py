@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 REGISTRY = {
     "title": "title:TitleScene",
     "lobby": "lobby:LobbyScene",
+    "roulette": "roulette:RouletteScene",
 }
 
 
