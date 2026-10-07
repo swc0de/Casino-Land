@@ -9,9 +9,11 @@ from pathlib import Path
 
 import pygame
 
+from ..audio.mixer import SoundBank
 from ..core.casino import Casino
+from ..core.money import dollars
 from ..core.save import Profile, load_profile, save_profile
-from . import fonts, theme
+from . import caches, fonts, theme
 from .scene import Scene, SceneManager
 
 # Longest simulated step per frame. A stall (window drag, breakpoint) then slows
@@ -38,11 +40,12 @@ class App:
         self.options = options or AppOptions()
         pygame.mixer.pre_init(44100, -16, 2, 512)
         pygame.init()
-        fonts.get.cache_clear()  # fonts from an earlier pygame session are invalid
+        caches.clear_all()  # surfaces and fonts from an earlier pygame session are invalid
         self.audio_ok = self._init_audio()
 
-        self.screen = self._open_window()
         pygame.display.set_caption("Neon Royale Casino")
+        pygame.display.set_icon(self._make_icon())
+        self.screen = self._open_window()
         self.clock = pygame.time.Clock()
 
         self.rng = random.Random(self.options.seed)
@@ -54,6 +57,7 @@ class App:
         if self.settings.fullscreen:
             self._set_fullscreen(True)
 
+        self.sound = SoundBank(self.audio_ok, self.settings, seed=self.options.seed or 7)
         self.scenes = SceneManager()
         self.time = 0.0
         self.frame = 0
@@ -71,6 +75,12 @@ class App:
             return True
         except pygame.error:
             return False
+
+    @staticmethod
+    def _make_icon() -> pygame.Surface:
+        from .render.chips import chip_top
+
+        return chip_top(dollars(25), 64)
 
     def _open_window(self) -> pygame.Surface:
         flags = pygame.SCALED | pygame.RESIZABLE
@@ -98,7 +108,13 @@ class App:
 
     def go(self, name: str) -> None:
         """Fade to the scene registered as ``name``."""
+        self.sound.play("whoosh", 0.6)
         self.scenes.switch(self.make_scene(name))
+
+    @property
+    def anim_speed(self) -> float:
+        """Multiplier for dealing and payout animations (the "fast animations" setting)."""
+        return 1.8 if self.settings.fast_animations else 1.0
 
     def save(self) -> None:
         if self.options.save_path is not None:
@@ -119,6 +135,7 @@ class App:
                     self._handle_event(event)
                 self.time += dt
                 self.frame += 1
+                self.sound.update()
                 self.scenes.update(dt)
                 self.scenes.draw(self.screen)
                 if self.settings.show_fps:
@@ -129,6 +146,7 @@ class App:
                 pygame.display.flip()
         finally:
             self.save()
+            self.sound.stop_all()
             pygame.quit()
         return 0
 

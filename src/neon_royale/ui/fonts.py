@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from functools import cache
 from pathlib import Path
 
 import pygame
+
+from .caches import surface_cache
 
 FONT_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 
@@ -18,7 +19,7 @@ ROLES = {
 }
 
 
-@cache
+@surface_cache(maxsize=None)
 def get(role: str, size: int) -> pygame.font.Font:
     """Return the font for ``role`` at ``size`` px, falling back to pygame's default."""
     filename = ROLES.get(role)
