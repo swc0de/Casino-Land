@@ -105,3 +105,8 @@ class PokerRoom:
         self.wallet.credit(amount)
         self.table.seats[HUMAN_SEAT] = None
         return amount
+
+    def abandon(self) -> Cents:
+        """Leave immediately (e.g. the window closes): void any hand, then cash out."""
+        self.table.void_hand()
+        return self.cash_out()

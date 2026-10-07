@@ -111,6 +111,22 @@ class App:
         self.sound.play("whoosh", 0.6)
         self.scenes.switch(self.make_scene(name))
 
+    def toggle_mute(self) -> None:
+        settings = self.settings
+        if settings.master_volume > 0:
+            self._volume_before_mute = settings.master_volume
+            settings.master_volume = 0.0
+            message = "Sound off (M)"
+        else:
+            settings.master_volume = getattr(self, "_volume_before_mute", 0.8) or 0.8
+            message = "Sound on"
+        self.sound.apply_volumes()
+        top = self.scenes.top
+        toast = getattr(top, "toast", None)
+        if toast is not None:
+            toast.show(message)
+        self.save()
+
     @property
     def anim_speed(self) -> float:
         """Multiplier for dealing and payout animations (the "fast animations" setting)."""
@@ -128,7 +144,8 @@ class App:
     def run(self) -> int:
         started = time.perf_counter()
         try:
-            self.scenes.switch(self.make_scene(self.options.start_scene))
+            if self.scenes.top is None:
+                self.scenes.switch(self.make_scene(self.options.start_scene))
             while self.running:
                 dt = min(self.clock.tick(theme.FPS) / 1000, MAX_DT)
                 for event in pygame.event.get():
@@ -145,6 +162,8 @@ class App:
                     break
                 pygame.display.flip()
         finally:
+            for scene in reversed(self.scenes.stack):
+                scene.shutdown()
             self.save()
             self.sound.stop_all()
             pygame.quit()
@@ -169,6 +188,9 @@ class App:
                 return
             if event.key == pygame.K_F3:
                 self.settings.show_fps = not self.settings.show_fps
+                return
+            if event.key == pygame.K_m and not event.mod & pygame.KMOD_CTRL:
+                self.toggle_mute()
                 return
         self.scenes.handle_event(event)
 

@@ -57,8 +57,6 @@ class TitleScene(Stage):
     def update(self, dt: float) -> None:
         super().update(dt)
         self.sign.update(dt)
-        if not self.sound.is_looping("ambience"):
-            self.sound.loop("ambience", 0.8, fade_ms=2500)
         if self.sign.lit:
             self.sparkle_timer -= dt
             if self.sparkle_timer <= 0:

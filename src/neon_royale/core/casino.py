@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .money import Cents, dollars
-from .save import COMP_AMOUNT, GameStats, Profile
+from .save import COMP_AMOUNT, STARTING_BANKROLL, GameStats, Profile
 from .wallet import Wallet
 
 # Below this the player cannot sit at any table, so the house offers a free top-up.
@@ -38,3 +38,9 @@ class Casino:
 
     def record_round(self, game: str, wagered: Cents, returned: Cents) -> None:
         self.profile.stats.setdefault(game, GameStats()).record(wagered, returned)
+
+    def reset(self) -> None:
+        """Start over: fresh bankroll and stats; settings are kept."""
+        settings = self.profile.settings
+        self.profile = Profile(balance=STARTING_BANKROLL, settings=settings)
+        self.wallet = Wallet(STARTING_BANKROLL)

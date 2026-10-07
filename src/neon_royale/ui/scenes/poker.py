@@ -195,6 +195,12 @@ def render_table() -> pygame.Surface:
 
 
 class PokerScene(Stage):
+    help_topic = "poker"
+    ambience = 0.4
+
+    def shutdown(self) -> None:
+        self.room.abandon()
+
     def enter(self) -> None:
         app = self.app
         self.room = PokerRoom(app.casino.wallet, app.rng)
@@ -289,6 +295,7 @@ class PokerScene(Stage):
         self.raise_to: Cents = 0
         # Table controls.
         self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.add_help_button()
         self.btn_topup = self.button(
             (24, 76, 130, 40), "ADD CHIPS", self.top_up, color=theme.CYAN, font_size=16
         )

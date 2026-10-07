@@ -397,3 +397,14 @@ class RouletteTable:
         self._placements.clear()
         self.pending = None
         return result
+
+    def abandon(self) -> Cents:
+        """Leave the table cleanly (e.g. the window closes).
+
+        A spin already under way is settled (its number was decided when the ball
+        was launched); bets not yet spun are refunded. Returns what went back to the
+        wallet.
+        """
+        if self.pending is not None:
+            return self.settle().returned
+        return self.clear()
