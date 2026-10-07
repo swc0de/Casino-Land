@@ -12,16 +12,19 @@ from ...core.money import Cents, fmt
 from ...core.roulette import Bet, RouletteTable, SpinResult, TableError
 from .. import fonts, theme
 from ..caches import optimise, surface_cache
-from ..fx.glow import neon_frame, neon_text
-from ..fx.marquee import Marquee
 from ..fx.spin import WheelSpin
 from ..fx.tween import ease_in_out_cubic, ease_out_back, ease_out_cubic
 from ..render import wheel as wheel_art
-from ..render.backdrop import felt
 from ..render.chips import chip_top, draw_amount
+from ..render.decor import (
+    draw_gilded_frame,
+    engraved_text,
+    lacquer_panel,
+    table_background,
+    wood_tray,
+)
 from ..roulette_board import BoardGeometry
 from ..stage import Stage
-from ..theme import lerp_color
 from ..widgets import ChipRack, CountingLabel, draw_panel
 
 WHEEL_CENTER = (232, 338)
@@ -29,7 +32,7 @@ BOWL_DIAMETER = 396
 FACE_DIAMETER = round(BOWL_DIAMETER * wheel_art.FACE)
 BALL_RADIUS = 7
 CHIP_D = 30
-BALANCE_POS = (40, 672)
+BALANCE_POS = (66, 668)
 DEALER_POS = (WHEEL_CENTER[0] + 120, 120)
 SPIN_SECONDS = 7.0
 BIG_WIN_MULTIPLE = 10  # a payout of 10x the total stake gets the full celebration
@@ -57,11 +60,22 @@ def _highlight(size: tuple[int, int]) -> pygame.Surface:
     return tile
 
 
+def _wheel_well(surface: pygame.Surface) -> None:
+    """The wheel sits sunk into a wooden surround with a shadow beneath it."""
+    shadow = pygame.Surface((BOWL_DIAMETER + 80, BOWL_DIAMETER + 80), pygame.SRCALPHA)
+    pygame.draw.circle(shadow, (0, 0, 0, 170), shadow.get_rect().center, BOWL_DIAMETER // 2 + 14)
+    for _ in range(3):
+        shadow = pygame.transform.box_blur(shadow, 8)
+    surface.blit(shadow, shadow.get_rect(center=(WHEEL_CENTER[0] + 6, WHEEL_CENTER[1] + 12)))
+    pygame.draw.circle(surface, (24, 10, 4), WHEEL_CENTER, BOWL_DIAMETER // 2 + 8)
+    pygame.draw.circle(surface, theme.GOLD_DARK, WHEEL_CENTER, BOWL_DIAMETER // 2 + 8, 2)
+
+
 def render_board(geom: BoardGeometry) -> pygame.Surface:
     """The printed betting layout on transparent felt."""
     surf = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
-    line = (240, 236, 220, 210)
-    num_font = fonts.get("display", 24)
+    line = (238, 226, 192, 230)
+    num_font = fonts.get("numbers", 23)
     label_font = fonts.get("display", 18)
 
     zero = geom.zero_rect
@@ -131,54 +145,39 @@ class RouletteScene(Stage):
         self.geom = BoardGeometry(left=462, top=150)
         self.spinner = WheelSpin(app.rng)
 
-        background = felt(theme.SIZE, theme.FELT_GREEN, theme.FELT_GREEN_DARK, seed=11)
+        background = table_background(theme.FELT_GREEN, theme.FELT_GREEN_DARK, seed=11).copy()
+        _wheel_well(background)
         background.blit(render_board(self.geom), (0, 0))
+        tray = pygame.Rect(0, 0, 440, 74)
+        tray.center = (self.geom.rect.centerx, 516)
+        wood_tray(background, tray)
         self.background = background
         self.bowl = wheel_art.wheel_bowl(BOWL_DIAMETER)
         self.face = wheel_art.wheel_face(FACE_DIAMETER)
         self.ball = wheel_art.ball_sprite(BALL_RADIUS)
-        self.wheel_glow = neon_frame(
-            (BOWL_DIAMETER + 16, BOWL_DIAMETER + 16), theme.CYAN, 4, 999, 14
-        )
-        self.title = neon_text("ROULETTE", "display", 30, theme.PINK, 10)
-        self.marquee = Marquee(
-            pygame.Rect(10, 10, theme.WIDTH - 20, theme.HEIGHT - 20),
-            spacing=34,
-            radius=4,
-            pattern="chase",
-            speed=5,
-            rng=app.rng,
-        )
+        self.title = engraved_text("ROULETTE", "title", 30, "gold")
 
         board = self.geom.rect
-        self.rack = ChipRack((board.centerx, 512), self.sound, diameter=54)
+        self.rack = ChipRack((board.centerx, 516), self.sound, diameter=52)
         self.rack.set_balance(self.table.wallet.balance)
         self.balance = CountingLabel(
             BALANCE_POS, self.table.wallet.balance, "Bankroll", "midleft", 32
         )
 
         y = 600
-        self.btn_undo = self.button(
-            (462, y, 120, 50), "UNDO", self.undo, color=theme.CYAN, hotkey=pygame.K_BACKSPACE
-        )
-        self.btn_clear = self.button(
-            (594, y, 120, 50), "CLEAR", self.clear, color=theme.CYAN, hotkey=pygame.K_c
-        )
-        self.btn_double = self.button(
-            (726, y, 100, 50), "2X", self.double, color=theme.PURPLE, hotkey=pygame.K_d
-        )
-        self.btn_rebet = self.button(
-            (838, y, 130, 50), "REBET", self.rebet, color=theme.PURPLE, hotkey=pygame.K_r
-        )
+        self.btn_undo = self.button((462, y, 120, 50), "UNDO", self.undo, hotkey=pygame.K_BACKSPACE)
+        self.btn_clear = self.button((594, y, 120, 50), "CLEAR", self.clear, hotkey=pygame.K_c)
+        self.btn_double = self.button((726, y, 100, 50), "2X", self.double, hotkey=pygame.K_d)
+        self.btn_rebet = self.button((838, y, 130, 50), "REBET", self.rebet, hotkey=pygame.K_r)
         self.btn_spin = self.button(
             (990, y - 6, 230, 62),
             "SPIN",
             self.spin,
-            color=theme.GOLD,
+            kind="primary",
             font_size=30,
             hotkey=pygame.K_SPACE,
         )
-        self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.button((40, 38, 130, 44), "LOBBY", self.leave, font_size=18)
         self.add_help_button()
 
         self.hover_bet: Bet | None = None
@@ -313,9 +312,7 @@ class RouletteScene(Stage):
         self.dolly = number
         self.dolly_t = 0.0
         tint = {"red": theme.LOSE, "black": theme.TEXT, "green": theme.WIN}[color]
-        self.banner.show(
-            f"{number} {color.upper()}", "", tint, hold=1.4, center=(self.geom.rect.centerx, 120)
-        )
+        self.banner.show(f"{number} {color.upper()}", "", tint, hold=1.4, center=WHEEL_CENTER)
 
         # Snapshot the layout as movable stacks, then settle the table.
         winners = [(p, Ghost(p.stake, self.geom.spot(p.bet))) for p in result.payouts if p.won]
@@ -364,12 +361,11 @@ class RouletteScene(Stage):
         net = result.net
         if big:
             self.sound.play("win_big")
-            self.marquee.celebrate(4.0)
-            self.particles.confetti(pygame.Rect(0, 0, theme.WIDTH, 40), 160)
+            self.celebrate(4.0, big=True)
             self.banner.show("BIG WIN!", f"{fmt(result.returned)}", theme.GOLD, hold=2.2)
         elif net > 0:
             self.sound.play("win")
-            self.marquee.celebrate(1.5)
+            self.celebrate(1.5)
             self.toast.show(f"You win {fmt(result.returned)}", theme.WIN)
         else:
             self.sound.play("push", 0.6)
@@ -382,7 +378,7 @@ class RouletteScene(Stage):
         self._refresh()
         self.app.save()
         if self.app.casino.comp_available:
-            self.toast.show("Out of chips? The lobby has a gift for you.", theme.LIME)
+            self.toast.show("Out of chips? The lobby has a gift for you.", theme.GOLD_LIGHT)
         yield 0.0
 
     # -- frame --------------------------------------------------------------------------
@@ -417,7 +413,6 @@ class RouletteScene(Stage):
         if self.spinner.flight is not None:
             self.sound.set_loop_volume("ball_roll", 0.9 * self.spinner.flight.relative_speed())
         self.dolly_t += dt
-        self.marquee.update(dt)
         self.rack.update(dt)
         self.balance.update(dt)
         has_bets = bool(self.table.bets)
@@ -432,7 +427,6 @@ class RouletteScene(Stage):
 
     def _draw_wheel(self, surface: pygame.Surface) -> None:
         cx, cy = WHEEL_CENTER
-        self.wheel_glow.draw(surface, WHEEL_CENTER, 0.7 + 0.3 * self.spinner.spinning)
         surface.blit(self.bowl, self.bowl.get_rect(center=WHEEL_CENTER))
         face = pygame.transform.rotozoom(self.face, -math.degrees(self.spinner.wheel_angle), 1.0)
         surface.blit(face, face.get_rect(center=WHEEL_CENTER))
@@ -496,9 +490,8 @@ class RouletteScene(Stage):
             return
         rect = self.geom.cell_rect(self.dolly)
         drop = ease_out_back(min(1.0, self.dolly_t / 0.4))
-        pulse = 0.75 + 0.25 * math.sin(self.t * 6)
-        frame = neon_frame(rect.inflate(6, 6).size, theme.GOLD, 3, 8, 10)
-        frame.draw(surface, rect.center, pulse)
+        pulse = 0.6 + 0.4 * math.sin(self.t * 6)
+        draw_gilded_frame(surface, rect.inflate(6, 6), 3, 6, glow=round(pulse, 1))
         # The dolly: a small glass marker resting on the corner of the winning number.
         cx = rect.right - 12
         cy = rect.top + 12 - 40 * (1 - drop)
@@ -508,44 +501,46 @@ class RouletteScene(Stage):
         pygame.draw.circle(surface, theme.WHITE, (cx - 3, cy - 3), 3)
 
     def _draw_history(self, surface: pygame.Surface) -> None:
-        label = fonts.get("body_bold", 18).render("LAST", True, theme.TEXT_DIM)
-        x, y = self.geom.rect.left, 112
-        surface.blit(label, label.get_rect(midleft=(x, y)))
-        x += label.get_width() + 18
-        font = fonts.get("display", 15)
-        for i, n in enumerate(self.table.history[:16]):
-            color = NUMBER_COLORS[r.color_of(n)]
-            radius = 15 if i == 0 else 13
-            pygame.draw.circle(surface, color, (x, y), radius)
-            pygame.draw.circle(
-                surface, theme.GOLD if i == 0 else (220, 220, 220), (x, y), radius, 2
-            )
-            text = font.render(str(n), True, theme.WHITE)
-            surface.blit(text, text.get_rect(center=(x, y + 1)))
-            x += radius * 2 + 6
+        """The electronic result board every roulette table has."""
+        board = pygame.Rect(self.geom.rect.left, 90, self.geom.rect.width, 44)
+        lacquer_panel(surface, board, (6, 4, 4), 245, True, 8)
+        label = fonts.get("body_bold", 13).render("L A S T", True, theme.GOLD)
+        surface.blit(label, label.get_rect(midleft=(board.left + 14, board.centery)))
+        x = board.left + 74
+        font = fonts.get("numbers", 18)
+        for i, n in enumerate(self.table.history[:17]):
+            color = {"red": (255, 70, 70), "black": (236, 232, 220), "green": (90, 230, 120)}[
+                r.color_of(n)
+            ]
+            text = font.render(str(n), True, color)
+            box = pygame.Rect(x, board.top + 8, 36, 28)
+            if i == 0:
+                pygame.draw.rect(surface, (60, 44, 14), box, border_radius=4)
+                pygame.draw.rect(surface, theme.GOLD, box, 1, border_radius=4)
+            surface.blit(text, text.get_rect(center=box.center))
+            x += 39
 
     def _draw_hud(self, surface: pygame.Surface) -> None:
-        self.title.draw(surface, (WHEEL_CENTER[0] + 92, 46))
-        panel = pygame.Rect(22, 590, 400, 116)
-        draw_panel(surface, panel, (8, 4, 20, 190), theme.PURPLE, 14)
+        self.title.draw(surface, (WHEEL_CENTER[0] + 116, 60))
+        panel = pygame.Rect(44, 586, 382, 108)
+        draw_panel(surface, panel, (20, 11, 7, 235), theme.GOLD, 14, 2)
         self.balance.draw(surface)
-        small = fonts.get("body_bold", 20)
+        small = fonts.get("body_bold", 18)
         bet_text = small.render(f"ON TABLE  {fmt(self.table.total_bet)}", True, theme.TEXT)
-        surface.blit(bet_text, (240, 606))
+        surface.blit(bet_text, (250, 602))
         last = small.render(
             f"LAST WIN  {fmt(self.last_win)}", True, theme.WIN if self.last_win else theme.TEXT_DIM
         )
-        surface.blit(last, (240, 636))
-        limits = fonts.get("body", 17).render(
-            f"Table {fmt(r.MIN_BET)} - {fmt(r.MAX_TABLE)}  ·  European single zero",
+        surface.blit(last, (250, 630))
+        limits = fonts.get("body", 15).render(
+            f"{fmt(r.MIN_BET)} - {fmt(r.MAX_TABLE)}  ·  single zero",
             True,
             theme.TEXT_MUTED,
         )
-        surface.blit(limits, (240, 668))
+        surface.blit(limits, (250, 662))
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(self.background, (0, 0))
-        self.marquee.draw(surface)
         self._draw_wheel(surface)
         self._draw_history(surface)
         self._draw_dolly(surface)
@@ -554,8 +549,8 @@ class RouletteScene(Stage):
         self.rack.draw(surface, self.t)
         self._draw_hud(surface)
         self.draw_buttons(surface)
-        self.draw_overlays(surface)
         if self.busy and self.spinner.spinning:
-            glow = lerp_color(theme.GOLD, theme.WHITE, 0.3)
-            text = fonts.get("display", 22).render("NO MORE BETS", True, glow)
-            surface.blit(text, text.get_rect(center=(self.geom.rect.centerx, 462)))
+            text = engraved_text("NO MORE BETS", "display", 24, "gold")
+            text.draw(surface, (self.geom.rect.centerx, 462), 0.8 + 0.2 * math.sin(self.t * 5))
+        self.draw_celebration(surface)
+        self.draw_overlays(surface)

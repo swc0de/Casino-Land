@@ -1,4 +1,4 @@
-"""Title screen: the marquee sign strikes up, then the doors open."""
+"""Title screen: the entrance sign over red velvet, bulbs chasing round it."""
 
 from __future__ import annotations
 
@@ -8,77 +8,98 @@ import pygame
 
 from ... import __version__
 from .. import fonts, theme
-from ..fx.glow import neon_text
-from ..fx.signboard import SignBoard
-from ..render.backdrop import casino_night
+from ..fx.marquee import Marquee
+from ..fx.tween import ease_out_cubic
+from ..render.decor import (
+    crown,
+    engraved_text,
+    lacquer_panel,
+    ornament_rule,
+    scatter_sparkles,
+    velvet,
+)
 from ..stage import Stage
 
-HORIZON = 470
+SIGN = pygame.Rect(170, 92, 940, 380)
+INTRO = 1.8  # seconds until the sign is fully lit
 
 
 class TitleScene(Stage):
     def enter(self) -> None:
-        self.backdrop = casino_night(HORIZON)
-        self.sign = SignBoard(
-            pygame.Rect(120, 64, 1040, 320),
-            "NEON ROYALE",
-            self.app.rng,
-            title_size=104,
-            subtitle="CASINO",
-            subtitle_size=46,
-            on_strike=lambda: self.sound.play("neon_buzz", 0.5),
-            dying_letter=7,
+        self.backdrop = velvet()
+        self.marquee = Marquee(
+            SIGN.inflate(-24, -24),
+            spacing=30,
+            radius=6,
+            pattern="chase",
+            speed=7,
+            rng=self.app.rng,
         )
-        self.sign.power_on(delay=0.5, duration=1.5)
-        self.prompt = neon_text("CLICK OR PRESS ANY KEY", "display", 28, theme.CYAN, 10)
-        self.footer = fonts.get("body", 18).render(
+        self.marquee.power = 0.0
+        self.logo = engraved_text("NEON ROYALE", "logo", 92, "gold", glow=0.5, shadow=5)
+        self.subtitle = engraved_text("C  A  S  I  N  O", "display", 40, "cream", shadow=3)
+        self.prompt = engraved_text("CLICK TO ENTER", "display", 30, "gold", shadow=2)
+        self.footer = fonts.get("body", 17).render(
             f"Play money only. No real-money gambling, no purchases.   v{__version__}",
             True,
-            theme.TEXT_MUTED,
+            theme.TEXT_DIM,
         )
-        self.sparkle_timer = 0.0
+        self.intro = 0.0
         self.leaving = False
+        self.chimed = False
+
+    @property
+    def lit(self) -> bool:
+        return self.intro >= INTRO
+
+    def skip_intro(self) -> None:
+        self.intro = INTRO
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.app.quit()
             return True
         if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
-            if not self.sign.lit:
-                self.sign.skip_intro()
+            if not self.lit:
+                self.skip_intro()
             elif not self.leaving:
                 self.leaving = True
-                self.sound.play("ui_click")
-                self.sign.celebrate(1.0)
+                self.sound.play("chip_stack", 0.8)
+                self.marquee.celebrate(1.0)
                 self.app.go("lobby")
             return True
         return False
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        self.sign.update(dt)
-        if self.sign.lit:
-            self.sparkle_timer -= dt
-            if self.sparkle_timer <= 0:
-                self.sparkle_timer = self.app.rng.uniform(0.25, 0.7)
-                r = self.sign.rect
-                corner = self.app.rng.choice([r.topleft, r.topright, r.bottomleft, r.bottomright])
-                self.particles.burst(
-                    corner,
-                    count=10,
-                    colors=(theme.GOLD, theme.WARM_WHITE, theme.PINK),
-                    speed=(40, 160),
-                    gravity=120,
-                    life=(0.4, 0.9),
-                )
+        self.intro = min(INTRO, self.intro + dt)
+        # Bulbs come on in the second half of the intro.
+        self.marquee.power = max(0.0, min(1.0, (self.intro - INTRO * 0.5) / (INTRO * 0.4)))
+        if self.lit and not self.chimed:
+            self.chimed = True
+            self.sound.play("push", 0.6)
+        self.marquee.update(dt)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(self.backdrop, (0, 0))
-        self.sign.draw(surface)
-        if self.sign.lit:
-            pulse = 0.8 + 0.2 * math.sin(self.t * 3.2)
-            self.prompt.draw(surface, (theme.WIDTH // 2, 560), pulse)
+        appear = ease_out_cubic(min(1.0, self.intro / (INTRO * 0.45)))
+        if appear > 0.02:
+            lacquer_panel(surface, SIGN, (26, 10, 8), round(245 * appear), appear > 0.5, 22)
+            pygame.draw.rect(surface, theme.GOLD_DARK, SIGN.inflate(-40, -40), 1, border_radius=14)
+        if appear > 0.6:
+            self.marquee.draw(surface)
+        text_in = ease_out_cubic(max(0.0, min(1.0, (self.intro - 0.35) / 0.8)))
+        cx = theme.WIDTH // 2
+        crown(surface, (cx, SIGN.top + 74), 74 * max(0.01, text_in))
+        self.logo.draw(surface, (cx, SIGN.top + 178), text_in)
+        if text_in > 0.5:
+            ornament_rule(surface, (cx, SIGN.top + 252), 420)
+        self.subtitle.draw(surface, (cx, SIGN.top + 300), text_in)
+        if self.lit:
+            scatter_sparkles(surface, pygame.Rect(cx - 380, SIGN.top + 140, 760, 80), self.t, 7)
+            pulse = 0.8 + 0.2 * math.sin(self.t * 3.0)
+            self.prompt.draw(surface, (cx, 560), pulse)
         surface.blit(
-            self.footer, self.footer.get_rect(midbottom=(theme.WIDTH // 2, theme.HEIGHT - 14))
+            self.footer, self.footer.get_rect(midbottom=(theme.WIDTH // 2, theme.HEIGHT - 16))
         )
         self.draw_overlays(surface)

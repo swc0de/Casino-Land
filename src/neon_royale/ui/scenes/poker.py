@@ -16,14 +16,21 @@ from ...core.poker.engine import CHIP, Decision, Legal, Move
 from ...core.poker.room import BIG_BLIND, HUMAN_SEAT, MIN_BUY_IN, PokerRoom, RoomError
 from .. import fonts, theme
 from ..caches import optimise
-from ..fx.glow import NeonGraphic, neon_text
-from ..fx.marquee import Marquee
 from ..fx.tween import ease_in_out_cubic, ease_out_back, ease_out_cubic
-from ..render.backdrop import felt, night_sky
+from ..render.backdrop import felt
 from ..render.chips import draw_amount
+from ..render.decor import (
+    carpet,
+    draw_gilded_frame,
+    engraved_text,
+    lacquer_panel,
+    light_pool,
+    padded_ellipse,
+    wood,
+)
 from ..sprites import CardSprite
 from ..stage import Stage
-from ..theme import Color, lerp_color
+from ..theme import Color
 from ..widgets import CountingLabel, Slider, draw_panel
 
 TABLE_CENTER = (640, 312)
@@ -84,11 +91,11 @@ LAYOUT: dict[int, dict[str, tuple[float, float]]] = {
 SEAT_POS = {seat: spots["avatar"] for seat, spots in LAYOUT.items()}
 ACTION_COLORS: dict[str, Color] = {
     "FOLD": theme.TEXT_MUTED,
-    "CHECK": theme.CYAN,
-    "CALL": theme.LIME,
+    "CHECK": (40, 70, 120),
+    "CALL": (30, 104, 56),
     "BET": theme.GOLD,
-    "RAISE": theme.ORANGE,
-    "ALL IN": theme.PINK,
+    "RAISE": (150, 98, 20),
+    "ALL IN": (150, 20, 34),
     "SB": theme.TEXT_DIM,
     "BB": theme.TEXT_DIM,
 }
@@ -152,43 +159,46 @@ class SeatView:
 
 
 def render_table() -> pygame.Surface:
-    surf = night_sky()
-    shade = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
-    shade.fill((0, 0, 0, 90))
-    surf.blit(shade, (0, 0))
+    surf = carpet(theme.SIZE, seed=5, dim=0.55).copy()
     cx, cy = TABLE_CENTER
-    outer = pygame.Rect(0, 0, (TABLE_RX + 34) * 2, (TABLE_RY + 34) * 2)
+    pool = light_pool((1240, 720), (255, 214, 150), 120)
+    surf.blit(pool, pool.get_rect(center=(cx, cy + 20)))
+    outer = pygame.Rect(0, 0, (TABLE_RX + 40) * 2, (TABLE_RY + 40) * 2)
     outer.center = (cx, cy)
     inner = pygame.Rect(0, 0, TABLE_RX * 2, TABLE_RY * 2)
     inner.center = (cx, cy)
-    # Shadow, padded rail and felt.
     shadow = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
-    pygame.draw.ellipse(shadow, (0, 0, 0, 150), outer.move(0, 18))
+    pygame.draw.ellipse(shadow, (0, 0, 0, 170), outer.move(0, 20))
     for _ in range(3):
-        shadow = pygame.transform.box_blur(shadow, 10)
+        shadow = pygame.transform.box_blur(shadow, 12)
     surf.blit(shadow, (0, 0))
-    pygame.draw.ellipse(surf, (44, 20, 12), outer)
-    pygame.draw.ellipse(surf, (90, 46, 22), outer.inflate(-10, -10))
-    pygame.draw.ellipse(surf, (60, 28, 14), outer.inflate(-30, -30))
-    cloth = felt(inner.size, theme.FELT_RED, theme.FELT_RED_DARK, seed=31)
+    # Padded leather rail, then a walnut racetrack, then the baize.
+    padded_ellipse(surf, outer, 34)
+    race = outer.inflate(-64, -64)
+    race_mask = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
+    pygame.draw.ellipse(race_mask, (255, 255, 255, 255), race)
+    walnut = wood(theme.SIZE, theme.WALNUT, 15).convert_alpha()
+    walnut.blit(race_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+    surf.blit(walnut, (0, 0))
+    pygame.draw.ellipse(surf, theme.GOLD_DARK, race, 2)
+    cloth = felt(inner.size, theme.FELT_GREEN, theme.FELT_GREEN_DARK, seed=31)
     mask = pygame.Surface(inner.size, pygame.SRCALPHA)
     pygame.draw.ellipse(mask, (255, 255, 255, 255), mask.get_rect())
-    cloth = cloth.convert_alpha() if pygame.display.get_surface() else cloth.copy()
     clipped = pygame.Surface(inner.size, pygame.SRCALPHA)
     clipped.blit(cloth, (0, 0))
     clipped.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
     surf.blit(clipped, inner)
-    # Neon rim and a printed betting line.
-    rim = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
-    pygame.draw.ellipse(rim, (255, 255, 255), inner.inflate(6, 6), 4)
-    glow = NeonGraphic(rim, theme.PINK, 12)
-    surf.blit(glow.halo, (-glow.margin, -glow.margin))
-    surf.blit(glow.core, (-glow.margin, -glow.margin))
-    pygame.draw.ellipse(surf, (210, 120, 140), inner.inflate(-190, -150), 2)
-    logo = fonts.get("marquee", 40).render("NEON ROYALE", True, (150, 40, 70))
-    surf.blit(logo, logo.get_rect(center=(cx, cy + 112)))
-    hint = fonts.get("body_bold", 16).render(
-        "NO-LIMIT TEXAS HOLD'EM  ·  BLINDS $5/$10", True, (190, 110, 130)
+    pygame.draw.ellipse(surf, (10, 30, 16), inner, 3)
+    # Printed betting line and logo.
+    pygame.draw.ellipse(surf, theme.GOLD, inner.inflate(-190, -150), 2)
+    logo = engraved_text("NEON ROYALE", "logo", 34, "gold", shadow=0)
+    logo.surface.set_alpha(110)
+    surf.blit(logo.surface, logo.surface.get_rect(center=(cx, cy + 112)))
+    logo.surface.set_alpha(255)
+    hint = fonts.get("body_bold", 15).render(
+        "N O - L I M I T   T E X A S   H O L D ' E M  ·  B L I N D S   $ 5 / $ 1 0",
+        True,
+        (170, 150, 100),
     )
     surf.blit(hint, hint.get_rect(center=(cx, cy + 150)))
     return optimise(surf)
@@ -206,14 +216,6 @@ class PokerScene(Stage):
         self.room = PokerRoom(app.casino.wallet, app.rng)
         self.table = self.room.table
         self.background = render_table()
-        self.marquee = Marquee(
-            pygame.Rect(10, 10, theme.WIDTH - 20, theme.HEIGHT - 20),
-            spacing=34,
-            radius=4,
-            pattern="wave",
-            speed=3,
-            rng=app.rng,
-        )
         self.seats = [SeatView(i) for i in range(len(self.table.seats))]
         self.board: list[CardSprite] = []
         self.pot: Cents = 0
@@ -237,18 +239,16 @@ class PokerScene(Stage):
         self.buyin_amount = 0
         self.buyin_slider = Slider((440, 380, 400, 24), 0.5, self._buyin_changed, theme.GOLD)
         self.btn_sit = self.button(
-            (470, 440, 160, 54), "SIT DOWN", self.sit_down, color=theme.GOLD, hotkey=pygame.K_RETURN
+            (470, 440, 160, 54), "SIT DOWN", self.sit_down, kind="primary", hotkey=pygame.K_RETURN
         )
-        self.btn_leave_dialog = self.button(
-            (650, 440, 160, 54), "LOBBY", self.leave, color=theme.PINK
-        )
+        self.btn_leave_dialog = self.button((650, 440, 160, 54), "LOBBY", self.leave)
         # Decisions.
         y = 652
         self.btn_fold = self.button(
             (878, y, 116, 52),
             "FOLD",
             lambda: self.choose("fold"),
-            color=theme.TEXT_DIM,
+            kind="danger",
             hotkey=pygame.K_f,
             font_size=20,
         )
@@ -256,7 +256,7 @@ class PokerScene(Stage):
             (1002, y, 126, 52),
             "CHECK",
             lambda: self.choose("call"),
-            color=theme.LIME,
+            kind="primary",
             hotkey=pygame.K_c,
             font_size=18,
         )
@@ -264,7 +264,7 @@ class PokerScene(Stage):
             (1136, y, 126, 52),
             "RAISE",
             lambda: self.choose("raise"),
-            color=theme.GOLD,
+            kind="primary",
             hotkey=pygame.K_r,
             font_size=18,
         )
@@ -274,14 +274,12 @@ class PokerScene(Stage):
                 (1116, 566 + 0, 66, 34),
                 "½",
                 lambda: self.quick_bet(0.5),
-                color=theme.ORANGE,
                 font_size=16,
             ),
             self.button(
                 (1188, 566, 74, 34),
                 "POT",
                 lambda: self.quick_bet(1.0),
-                color=theme.ORANGE,
                 font_size=16,
             ),
         ]
@@ -289,16 +287,14 @@ class PokerScene(Stage):
             (1116, 604, 146, 34),
             "ALL IN",
             lambda: self.quick_bet(-1),
-            color=theme.PINK,
+            kind="danger",
             font_size=16,
         )
         self.raise_to: Cents = 0
         # Table controls.
-        self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.button((40, 38, 130, 44), "LOBBY", self.leave, font_size=18)
         self.add_help_button()
-        self.btn_topup = self.button(
-            (24, 76, 130, 40), "ADD CHIPS", self.top_up, color=theme.CYAN, font_size=16
-        )
+        self.btn_topup = self.button((366, 652, 150, 44), "ADD CHIPS", self.top_up, font_size=17)
         self._prepare_buyin()
         self._sync_buttons()
 
@@ -367,7 +363,7 @@ class PokerScene(Stage):
         self.sound.play("chip_stack")
         self.seats[HUMAN_SEAT].stack = self.room.stack
         self.balance.set(self.app.casino.balance)
-        self.toast.show(f"Added {fmt(amount)} to your stack", theme.CYAN)
+        self.toast.show(f"Added {fmt(amount)} to your stack", theme.GOLD_LIGHT)
 
     def leave(self) -> None:
         if self.table.in_hand and self.room.seated:
@@ -629,7 +625,7 @@ class PokerScene(Stage):
         self.sound.play("chip_cascade" if e.all_in else "chip_stack", 0.8)
         tween = self._chips_to_bet(e.seat, e.added)
         if e.all_in:
-            self.particles.burst(view.avatar, 26, (theme.PINK, theme.GOLD), speed=(80, 260))
+            self.particles.burst(view.avatar, 26, (theme.GOLD, theme.GOLD_LIGHT), speed=(80, 260))
         yield tween or 0.0
         yield 0.15
 
@@ -660,7 +656,7 @@ class PokerScene(Stage):
             if not view.folded and not view.all_in:
                 view.label = ""
         self.street_label = e.street.value.upper()
-        self.toast.show(e.street.value, theme.CYAN)
+        self.toast.show(e.street.value, theme.GOLD_LIGHT)
         yield 0.2
         for card in e.cards:
             i = len(self.board)
@@ -727,7 +723,7 @@ class PokerScene(Stage):
         if human_won:
             big = e.amount >= 60 * BIG_BLIND
             self.sound.play("win_big" if big else "win")
-            self.marquee.celebrate(3.5 if big else 1.5)
+            self.celebrate(3.5 if big else 1.5, big=False)
             self.particles.burst(self.seats[HUMAN_SEAT].avatar, 40, (theme.GOLD, theme.WARM_WHITE))
             if big:
                 self.particles.confetti(pygame.Rect(0, 0, theme.WIDTH, 40), 140)
@@ -812,7 +808,6 @@ class PokerScene(Stage):
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        self.marquee.update(dt)
         self.balance.set(self.app.casino.balance)
         self.balance.update(dt)
         for view in self.seats:
@@ -828,33 +823,27 @@ class PokerScene(Stage):
         x, y = view.avatar
         fade = view.fade
         dim = view.folded or (not view.in_hand and self.table.in_hand)
-        ring = view.color if not dim else (90, 80, 110)
+        ring = view.color if not dim else (110, 96, 80)
         active = self.active_seat == view.index
         plate = pygame.Rect(0, 0, 176, 58)
-        plate.center = (round(x), round(y + (6 if view.human else 34)))
+        plate.center = (round(x), round(y + (6 if view.human else 44)))
         if view.human:
             plate.width = 220
             plate.center = (round(x), round(y + 10))
-        fill = (14, 8, 30, round(225 * fade))
-        draw_panel(surface, plate, fill, ring if active else (70, 60, 100), 14, 2)
+        lacquer_panel(surface, plate, (22, 12, 8), round(235 * fade), not dim, 14)
         if active:
-            pulse = 0.6 + 0.4 * math.sin(self.t * 7)
-            pygame.draw.rect(
-                surface,
-                lerp_color(ring, theme.WHITE, pulse * 0.3),
-                plate.inflate(6, 6),
-                3,
-                border_radius=16,
-            )
+            pulse = 0.5 + 0.5 * math.sin(self.t * 7)
+            draw_gilded_frame(surface, plate.inflate(8, 8), 3, 16, glow=round(pulse, 1))
         # Avatar disc with initials.
         if not view.human:
-            pygame.draw.circle(surface, (10, 6, 20), (x, y), 30)
-            pygame.draw.circle(surface, ring, (x, y), 30, 3)
+            pygame.draw.circle(surface, (0, 0, 0), (x + 2, y + 3), 23)
+            pygame.draw.circle(surface, (30, 18, 14), (x, y), 22)
+            pygame.draw.circle(surface, theme.GOLD_DARK if dim else theme.GOLD, (x, y), 22, 3)
             initials = "".join(w[0] for w in view.name.split()[:2]).upper()
-            text = fonts.get("display", 20).render(initials, True, ring)
+            text = fonts.get("display", 17).render(initials, True, ring)
             surface.blit(text, text.get_rect(center=(x, y)))
         name_font = fonts.get("body_bold", 18)
-        stack_font = fonts.get("display", 17)
+        stack_font = fonts.get("numbers", 17)
         name = name_font.render(view.name, True, theme.TEXT if not dim else theme.TEXT_MUTED)
         stack_text = "ALL IN" if view.all_in and view.stack == 0 else fmt(view.stack)
         stack = stack_font.render(stack_text, True, theme.GOLD if not dim else theme.TEXT_MUTED)
@@ -862,19 +851,19 @@ class PokerScene(Stage):
             surface.blit(name, name.get_rect(midleft=(plate.left + 16, plate.centery)))
             surface.blit(stack, stack.get_rect(midright=(plate.right - 16, plate.centery)))
         else:
-            surface.blit(name, name.get_rect(center=(plate.centerx, plate.top + 18)))
-            surface.blit(stack, stack.get_rect(center=(plate.centerx, plate.top + 40)))
+            surface.blit(name, name.get_rect(center=(plate.centerx, plate.top + 20)))
+            surface.blit(stack, stack.get_rect(center=(plate.centerx, plate.top + 41)))
         if view.profile and not view.human:
             tag = fonts.get("body", 14).render(view.profile.upper(), True, theme.TEXT_MUTED)
-            surface.blit(tag, tag.get_rect(center=(x, y - 40)))
+            surface.blit(tag, tag.get_rect(center=(x, y - 32)))
         # Thinking dots.
         if active and not view.human and self.mode == "bot":
             dots = int(self.t * 4) % 4
             text = fonts.get("display", 18).render("." * dots, True, ring)
             surface.blit(text, text.get_rect(midleft=(x + 34, y - 10)))
         if view.winner > 0:
-            halo = neon_text("WINNER", "display", 18, theme.GOLD, 8)
-            halo.draw(surface, (plate.centerx, plate.bottom + 14), min(1.0, view.winner * 2))
+            halo = engraved_text("WINNER", "display", 20, "gold", glow=0.8, shadow=2)
+            halo.draw(surface, (plate.centerx, plate.bottom + 16), min(1.0, view.winner * 2))
 
     def _draw_labels(self, surface: pygame.Surface) -> None:
         for view in self.seats:
@@ -883,10 +872,10 @@ class PokerScene(Stage):
                 color = ACTION_COLORS.get(key, theme.TEXT)
                 pop = ease_out_back(min(1.0, view.label_age / 0.25))
                 pos = view.label_pos
-                text = fonts.get("display", 16).render(view.label, True, theme.WHITE)
+                text = fonts.get("display", 16).render(view.label, True, theme.TEXT)
                 box = text.get_rect(center=pos).inflate(18, 8)
                 box = box.inflate(-(1 - pop) * box.width, -(1 - pop) * box.height)
-                draw_panel(surface, box, (*color, 235), None, 10)
+                draw_panel(surface, box, (*color, 240), theme.GOLD, 10, 1)
                 if pop > 0.9:
                     surface.blit(text, text.get_rect(center=box.center))
             if view.hand_desc and view.present:
@@ -898,7 +887,7 @@ class PokerScene(Stage):
                     center = (cx + 14, cy - 58 if above else cy + 50)
                 text = fonts.get("body_bold", 17).render(view.hand_desc, True, theme.WARM_WHITE)
                 box = text.get_rect(center=center).inflate(14, 4)
-                draw_panel(surface, box, (8, 4, 20, 220), theme.GOLD, 8, 1)
+                draw_panel(surface, box, (20, 11, 7, 230), theme.GOLD, 8, 1)
                 surface.blit(text, text.get_rect(center=box.center))
 
     def _draw_chips(self, surface: pygame.Surface, chips: Chips) -> None:
@@ -907,7 +896,7 @@ class PokerScene(Stage):
 
     def _draw_table_state(self, surface: pygame.Surface) -> None:
         # Bets in front of players.
-        font = fonts.get("display", 14)
+        font = fonts.get("numbers", 14)
         for view in self.seats:
             if view.bet > 0:
                 bx, by = view.bet_pos
@@ -919,7 +908,7 @@ class PokerScene(Stage):
         # Pot.
         if self.pot > 0:
             draw_amount(surface, self.pot, (POT_POS[0], POT_POS[1] + 4), CHIP_D, 8)
-            text = fonts.get("display", 18).render(f"POT {fmt(self.pot)}", True, theme.GOLD)
+            text = fonts.get("numbers", 18).render(f"POT  {fmt(self.pot)}", True, theme.GOLD_LIGHT)
             surface.blit(text, text.get_rect(center=(POT_POS[0], POT_POS[1] - 44)))
         # Dealer button.
         bx, by = self.button_pos
@@ -935,8 +924,8 @@ class PokerScene(Stage):
         shade.fill((0, 0, 0, 150))
         surface.blit(shade, (0, 0))
         panel = pygame.Rect(390, 200, 500, 320)
-        draw_panel(surface, panel, (16, 8, 34, 245), theme.GOLD, 20, 3)
-        title = neon_text("TAKE A SEAT", "display", 34, theme.GOLD, 10)
+        draw_panel(surface, panel, (24, 12, 8, 248), theme.GOLD, 20, 3)
+        title = engraved_text("TAKE A SEAT", "display", 36, "gold", glow=0.4)
         title.draw(surface, (640, 250))
         info = fonts.get("body_bold", 20).render(
             "No-Limit Hold'em  ·  Blinds $5/$10  ·  Buy-in $400 - $2,000", True, theme.TEXT_DIM
@@ -949,14 +938,14 @@ class PokerScene(Stage):
             )
             surface.blit(msg, msg.get_rect(center=(640, 370)))
             return
-        amount = fonts.get("display", 34).render(fmt(self.buyin_amount), True, theme.WHITE)
+        amount = fonts.get("numbers", 34).render(fmt(self.buyin_amount), True, theme.GOLD_LIGHT)
         surface.blit(amount, amount.get_rect(center=(640, 344)))
         self.buyin_slider.draw(surface)
 
     def _draw_action_panel(self, surface: pygame.Surface) -> None:
         if self.mode != "human":
             return
-        draw_panel(surface, pygame.Rect(866, 552, 404, 162), (10, 6, 24, 225), theme.GOLD, 16)
+        draw_panel(surface, pygame.Rect(866, 552, 404, 162), (22, 12, 8, 240), theme.GOLD, 16, 2)
         legal = self._legal()
         if legal is not None and legal.can_raise:
             self.raise_slider.draw(surface)
@@ -965,7 +954,7 @@ class PokerScene(Stage):
 
     def _draw_info(self, surface: pygame.Surface) -> None:
         panel = pygame.Rect(22, 620, 330, 88)
-        draw_panel(surface, panel, (8, 4, 20, 200), theme.PURPLE, 14)
+        draw_panel(surface, panel, (22, 12, 8, 235), theme.GOLD, 14, 2)
         self.balance.draw(surface)
         hand = self.table.hand_number
         info = fonts.get("body", 16).render(
@@ -973,12 +962,11 @@ class PokerScene(Stage):
         )
         surface.blit(info, (230, 632))
         if self.street_label:
-            street = fonts.get("display", 16).render(self.street_label, True, theme.CYAN)
+            street = fonts.get("display", 16).render(self.street_label, True, theme.GOLD_LIGHT)
             surface.blit(street, (230, 656))
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(self.background, (0, 0))
-        self.marquee.draw(surface)
         for view in self.seats:
             self._draw_seat(surface, view)
         self._draw_table_state(surface)
@@ -995,4 +983,5 @@ class PokerScene(Stage):
         if self.mode == "buyin":
             self._draw_buyin(surface)
         self.draw_buttons(surface)
+        self.draw_celebration(surface)
         self.draw_overlays(surface)
