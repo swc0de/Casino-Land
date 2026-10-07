@@ -12,12 +12,24 @@ generated in code.
 | Milestone | State |
 |---|---|
 | 0. Scaffold: window, loop, scenes, save system, CI | ✅ |
-| 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ⏳ |
+| 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ✅ |
 | 2. Roulette | ⏳ |
 | 3. Blackjack | ⏳ |
 | 4. Poker engine | ⏳ |
 | 5. Poker table | ⏳ |
 | 6. Polish | ⏳ |
+
+## What's in it so far
+
+- **Title screen:** a brass-framed marquee sign strikes up letter by letter, with neon buzz,
+  chasing bulbs, and one tired tube that sputters now and then.
+- **Lobby:** three illustrated game cabinets with their own bulb borders, hover animations
+  and a rolling bankroll counter. Broke? Claim free chips from the house.
+- **Procedural art:** all 52 cards (original art-deco court cards), casino chips from 50¢
+  to $25K with stacked 2.5D chips, felts, backdrops and glow. No image files.
+- **Procedural sound:** chip clacks, card snaps, a riffle shuffle, wheel rumble, ball
+  ticks, win jingles, a big-win fanfare and a casino-floor ambience loop, all synthesised
+  with numpy at start-up in a background thread.
 
 ## Install and run
 
