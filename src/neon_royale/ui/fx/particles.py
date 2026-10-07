@@ -1,4 +1,4 @@
-"""Lightweight particles: sparks, confetti, and flying chip sprites."""
+"""Lightweight particles: golden sparks, confetti and flying chip sprites."""
 
 from __future__ import annotations
 
@@ -14,13 +14,12 @@ from ..theme import Color
 from .glow import glow_dot
 
 CONFETTI_COLORS: tuple[Color, ...] = (
-    theme.PINK,
-    theme.CYAN,
     theme.GOLD,
-    theme.LIME,
-    theme.PURPLE,
-    theme.ORANGE,
-    theme.WHITE,
+    theme.GOLD_LIGHT,
+    theme.WARM_WHITE,
+    (200, 30, 44),
+    (30, 120, 70),
+    (240, 240, 240),
 )
 
 

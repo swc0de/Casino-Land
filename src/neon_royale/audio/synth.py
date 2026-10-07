@@ -306,16 +306,6 @@ def ui_error(rng: np.random.Generator, sr: int = SAMPLE_RATE) -> np.ndarray:
     return _normalise(_fade(out, sr), 0.4)
 
 
-def neon_buzz(rng: np.random.Generator, sr: int = SAMPLE_RATE) -> np.ndarray:
-    """The crackle and hum of a neon tube striking."""
-    dur = 0.3
-    t = _time(dur, sr)
-    hum = sum(np.sin(2 * np.pi * 120 * h * t) / h for h in range(1, 7))
-    crackle = _band(_noise(rng, dur, sr), sr, 2000, 9000) * (rng.random(len(t)) < 0.03)
-    env = np.clip(t / 0.01, 0, 1) * np.exp(-t / 0.09)
-    return _normalise(_fade((hum * 0.6 + crackle * 2) * env, sr), 0.35)
-
-
 def whoosh(rng: np.random.Generator, sr: int = SAMPLE_RATE) -> np.ndarray:
     """Screen-transition swoosh."""
     dur = 0.45
@@ -366,7 +356,6 @@ RECIPES: dict[str, Recipe] = {
     "ui_hover": ui_hover,
     "ui_click": ui_click,
     "ui_error": ui_error,
-    "neon_buzz": neon_buzz,
     "whoosh": whoosh,
     "ambience": ambience,
 }

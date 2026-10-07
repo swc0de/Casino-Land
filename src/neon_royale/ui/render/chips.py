@@ -93,7 +93,7 @@ def chip_top(denom: Cents, diameter: int) -> pygame.Surface:
         pygame.draw.line(surf, style.spot, p0, p1, max(1, round(SS * diameter / 40)))
 
     font_size = round(r * (0.62 if len(style.label) <= 2 else 0.5))
-    label = fonts.get("display", font_size).render(style.label, True, style.text)
+    label = fonts.get("numbers", font_size).render(style.label, True, style.text)
     max_w = r * 1.0
     if label.get_width() > max_w:
         scale = max_w / label.get_width()

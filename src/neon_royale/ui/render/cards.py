@@ -294,8 +294,12 @@ def card_face(card: Card, width: int) -> pygame.Surface:
     return optimise(small)
 
 
+BACK_RED = (168, 18, 34)
+
+
 @surface_cache(maxsize=16)
-def card_back(width: int, color: Color = theme.PINK) -> pygame.Surface:
+def card_back(width: int, color: Color = BACK_RED) -> pygame.Surface:
+    """A classic casino card back: fine lattice on ivory inside a coloured frame."""
     out_w, out_h = card_size(width)
     w, h = out_w * SS, out_h * SS
     corner = round(w * 0.075)
@@ -303,33 +307,32 @@ def card_back(width: int, color: Color = theme.PINK) -> pygame.Surface:
     rect = surf.get_rect()
     pygame.draw.rect(surf, PAPER, rect, border_radius=corner)
     inner = rect.inflate(-round(w * 0.1), -round(w * 0.1))
-    pygame.draw.rect(surf, (22, 10, 46), inner, border_radius=corner // 2)
+    pygame.draw.rect(surf, color, inner, border_radius=corner // 2)
 
-    # Lattice of diamonds, clipped to the inner panel.
-    pattern = pygame.Surface(inner.size, pygame.SRCALPHA)
-    step = round(w * 0.11)
-    for i in range(-inner.height // step - 2, inner.width // step + 3):
+    # Diamond lattice in ivory over the coloured field.
+    field = inner.inflate(-SS * 8, -SS * 8)
+    pattern = pygame.Surface(field.size, pygame.SRCALPHA)
+    step = round(w * 0.085)
+    ivory = (250, 240, 222, 210)
+    for i in range(-field.height // step - 2, field.width // step + 3):
         x = i * step
-        pygame.draw.line(
-            pattern, (*theme.PURPLE, 150), (x, 0), (x + inner.height, inner.height), SS
-        )
-        pygame.draw.line(
-            pattern, (*theme.PURPLE, 150), (x, 0), (x - inner.height, inner.height), SS
-        )
-    mask = pygame.Surface(inner.size, pygame.SRCALPHA)
-    pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=corner // 2)
-    pattern.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-    surf.blit(pattern, inner.topleft)
+        pygame.draw.line(pattern, ivory, (x, 0), (x + field.height, field.height), SS)
+        pygame.draw.line(pattern, ivory, (x, 0), (x - field.height, field.height), SS)
+    for i in range(-field.height // step - 2, field.width // step + 3):
+        for j in range(0, field.height // step + 2):
+            pygame.draw.circle(pattern, ivory, (i * step + step / 2 + j * 0, j * step), SS * 1.4)
+    surf.blit(pattern, field.topleft)
+    pygame.draw.rect(surf, PAPER, field, SS * 2, border_radius=corner // 3)
+    pygame.draw.rect(surf, color, field.inflate(SS * 4, SS * 4), SS, border_radius=corner // 3)
 
-    pygame.draw.rect(surf, color, inner, round(SS * 2.5), border_radius=corner // 2)
-    pygame.draw.rect(
-        surf, theme.CYAN, inner.inflate(-SS * 8, -SS * 8), SS, border_radius=corner // 3
-    )
+    # Central medallion with a gold crown-spade.
     c = rect.center
-    pygame.draw.circle(surf, (22, 10, 46), c, w * 0.25)
-    pygame.draw.circle(surf, theme.GOLD, c, w * 0.25, round(SS * 2))
-    pygame.draw.circle(surf, color, c, w * 0.2, SS)
-    draw_suit(surf, Suit.SPADES, (c[0], c[1] - w * 0.02), w * 0.2, theme.GOLD)
+    pygame.draw.ellipse(surf, PAPER, pygame.Rect(0, 0, w * 0.46, w * 0.62).move(
+        c[0] - w * 0.23, c[1] - w * 0.31))  # fmt: skip
+    pygame.draw.ellipse(surf, color, pygame.Rect(0, 0, w * 0.4, w * 0.56).move(
+        c[0] - w * 0.2, c[1] - w * 0.28), SS * 2)  # fmt: skip
+    draw_suit(surf, Suit.SPADES, (c[0], c[1] + w * 0.02), w * 0.22, GOLD_DARK)
+    draw_suit(surf, Suit.SPADES, (c[0], c[1]), w * 0.22, GOLD)
     small = pygame.transform.smoothscale(surf, (out_w, out_h))
     return optimise(small)
 

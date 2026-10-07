@@ -1,1 +1,1 @@
-"""Visual effects: tweens, glow, neon signs, marquee bulbs, particles."""
+"""Visual effects: tweens, glow helpers, marquee bulbs, particles, wheel motion."""

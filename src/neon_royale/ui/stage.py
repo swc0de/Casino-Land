@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import pygame
 
+from . import theme
 from .fx.particles import ParticleSystem
 from .fx.tween import Animator, Director
 from .scene import Scene
@@ -38,6 +40,9 @@ class Stage(Scene):
         self.buttons: list[Button] = []
         self.t = 0.0
         self._ambience_applied = False
+        self.glow_time = 0.0
+        self.glow_total = 0.0
+        self._wash = pygame.Surface(theme.SIZE)
 
     @property
     def sound(self) -> SoundBank:
@@ -57,9 +62,25 @@ class Stage(Scene):
             open_help(self.app, self.help_topic)
 
     def add_help_button(self) -> None:
-        self.button((164, 24, 50, 44), "?", self.show_help, color=self.help_color, font_size=22)
+        self.button((180, 38, 50, 44), "?", self.show_help, font_size=24)
 
-    help_color = (20, 230, 255)
+    def celebrate(self, seconds: float = 2.0, big: bool = False) -> None:
+        """The table lights swell and gold sparks fly (wins, blackjacks, jackpots)."""
+        self.glow_time = max(self.glow_time, seconds)
+        self.glow_total = max(self.glow_total, seconds)
+        if big:
+            self.particles.confetti(pygame.Rect(0, 0, theme.WIDTH, 40), 150)
+
+    def draw_celebration(self, surface: pygame.Surface) -> None:
+        """Warm light wash used by ``celebrate``; call before ``draw_overlays``."""
+        if self.glow_time <= 0:
+            return
+        k = self.glow_time / max(0.01, self.glow_total)
+        pulse = 0.5 + 0.5 * math.sin(self.t * 9)
+        # Additive blits ignore surface alpha, so scale the colour itself.
+        level = 0.22 * k * (0.6 + 0.4 * pulse)
+        self._wash.fill((round(120 * level), round(84 * level), round(30 * level)))
+        surface.blit(self._wash, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
     def handle_event(self, event: pygame.event.Event) -> bool:  # type: ignore[override]
         if event.type == pygame.KEYDOWN and event.key == pygame.K_F1 and self.help_topic:
@@ -85,6 +106,7 @@ class Stage(Scene):
         self.anim.update(dt * speed)
         self.director.update(dt * speed)
         self.particles.update(dt)
+        self.glow_time = max(0.0, self.glow_time - dt)
         self.banner.update(dt)
         self.toast.update(dt)
         for button in self.buttons:

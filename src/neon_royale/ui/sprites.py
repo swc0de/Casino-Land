@@ -7,8 +7,8 @@ import math
 import pygame
 
 from ..core.cards import Card
-from .fx.glow import neon_frame
 from .render.cards import card_back, card_face, card_shadow, card_size
+from .render.decor import draw_gilded_frame
 from .theme import Color
 
 
@@ -63,8 +63,9 @@ class CardSprite:
         y -= self.lift
         if self.highlight is not None:
             w, h = self.size
-            frame = neon_frame((w + 8, h + 8), self.highlight, 3, 10, 10)
-            frame.draw(surface, (x, y), 0.9)
+            box = pygame.Rect(0, 0, round(w * self.scale) + 8, round(h * self.scale) + 8)
+            box.center = (round(x), round(y))
+            draw_gilded_frame(surface, box, 3, 10, glow=0.8)
         shadow = card_shadow(self.width)
         if abs(self.angle) > 0.05:
             shadow = pygame.transform.rotozoom(shadow, self.angle, 1.0)

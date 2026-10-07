@@ -13,13 +13,13 @@ from ..theme import Color, lerp_color, scale_color
 
 LEVELS = 12  # pre-rendered brightness steps per bulb colour
 
+# Celebration colours: classic Vegas bulbs in gold, white and red.
 RAINBOW: tuple[Color, ...] = (
-    theme.PINK,
+    theme.WARM_WHITE,
+    theme.GOLD_LIGHT,
+    (255, 120, 90),
+    theme.WARM_WHITE,
     theme.GOLD,
-    theme.CYAN,
-    theme.LIME,
-    theme.PURPLE,
-    theme.ORANGE,
 )
 
 
