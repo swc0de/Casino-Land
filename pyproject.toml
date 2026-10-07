@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neon-royale"
+version = "0.1.0"
+description = "A neon Vegas casino for the desktop: Roulette, Blackjack and Texas Hold'em. Play money only."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pygame-ce>=2.5,<3",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+neon-royale = "neon_royale.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+neon_royale = ["assets/fonts/*.ttf", "assets/fonts/*.txt"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # bugbear
+    "UP",  # pyupgrade
+    "SIM", # simplify
+    "N",   # pep8-naming
+    "RUF", # ruff-specific
+]
+ignore = [
+    "RUF001", # ambiguous unicode in strings: card suits (♠♥♦♣) are intentional
+    "RUF002",
+    "RUF003",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = [
+    # SDL's headless dummy driver has no GPU renderer; irrelevant to tests.
+    "ignore:no fast renderer available",
+]
+markers = [
+    "slow: exhaustive checks that take a while (deselect with -m 'not slow')",
+]
