@@ -14,6 +14,7 @@ REGISTRY = {
     "title": "title:TitleScene",
     "lobby": "lobby:LobbyScene",
     "roulette": "roulette:RouletteScene",
+    "blackjack": "blackjack:BlackjackScene",
 }
 
 
