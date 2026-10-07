@@ -348,6 +348,18 @@ class PokerTable:
         if stack.stack == 0:
             player.all_in = True
 
+    def void_hand(self) -> None:
+        """Cancel the hand in progress and give everyone back what they put in."""
+        if not self.in_hand:
+            return
+        for seat, player in self.players.items():
+            self.seats[seat].stack += player.committed
+            player.committed = player.bet = 0
+        self.pot = 0
+        self.in_hand = False
+        self.to_act = None
+        self.street = Street.SHOWDOWN
+
     # -- legal actions ----------------------------------------------------------------------
 
     @property

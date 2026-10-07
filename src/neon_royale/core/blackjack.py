@@ -511,6 +511,19 @@ class BlackjackTable:
         self.active = 0
         self.insurance = 0
 
+    def abandon(self) -> Cents:
+        """Leave mid-round (e.g. the window closes): void the hand and refund stakes.
+
+        Returns the amount credited back to the wallet.
+        """
+        refund = 0
+        if self.phase in (Phase.INSURANCE, Phase.PLAYER):
+            refund = self._wagered - self._returned
+            self.wallet.credit(refund)
+        self.phase = Phase.SETTLED
+        self.new_round()
+        return refund
+
 
 # -- basic strategy -------------------------------------------------------------------
 
