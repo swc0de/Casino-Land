@@ -15,7 +15,7 @@ generated in code.
 | 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ✅ |
 | 2. Roulette | ✅ |
 | 3. Blackjack | ✅ |
-| 4. Poker engine | ⏳ |
+| 4. Poker engine | ✅ |
 | 5. Poker table | ⏳ |
 | 6. Polish | ⏳ |
 
