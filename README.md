@@ -16,7 +16,7 @@ generated in code.
 | 2. Roulette | ✅ |
 | 3. Blackjack | ✅ |
 | 4. Poker engine | ✅ |
-| 5. Poker table | ⏳ |
+| 5. Poker table | ✅ |
 | 6. Polish | ⏳ |
 
 ## What's in it so far
@@ -77,6 +77,27 @@ Click the betting circle to add the selected chip (right-click removes one). You
 bet stays in the circle for the next hand. Keys: `Space`/`Enter` deal, `H` hit,
 `S` stand, `D` double, `P` split, `R` surrender, `I`/`N` insurance yes/no. **HINT**
 shows the basic-strategy play for these exact rules.
+
+## Texas Hold'em
+
+No-Limit Hold'em, six seats: you and five computer players. Blinds $5/$10, no rake.
+
+- **Buy in** for $400 to $2,000 (40 to 200 big blinds) from your bankroll; **ADD CHIPS**
+  between hands; **LOBBY** cashes your stack back into your bankroll (if a hand is
+  running you fold and leave when it ends).
+- Standard cash-game rules: the button moves every hand; heads-up the button posts the
+  small blind and acts first before the flop. The minimum bet is the big blind and a raise
+  must be at least the previous raise. An all-in for less than a full raise doesn't
+  reopen the betting for players who already acted. Uncalled bets are returned, side
+  pots are built for every all-in, and split pots give the odd $1 chip to the first
+  winner clockwise from the button.
+- The bots have personalities you can read on their nameplates (Rock, Shark, Maniac,
+  Calling station, Solid). Before the flop they rate hands with the Chen formula; after
+  it they estimate their winning chances by Monte Carlo simulation and weigh them
+  against the pot odds, with a dash of bluffing. Busted bots are replaced by new ones.
+
+Keys: `F` fold, `C` check/call, `R` bet/raise, mouse wheel adjusts the raise, `Space`
+skips the pause between hands.
 
 ## Install and run
 

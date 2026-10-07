@@ -272,6 +272,7 @@ class Banner:
         self.hold = 0.0
         self.active = False
         self.center = (theme.WIDTH // 2, theme.HEIGHT // 2)
+        self.size = 64
 
     def show(
         self,
@@ -280,8 +281,10 @@ class Banner:
         color: Color = theme.GOLD,
         hold: float = 1.6,
         center: tuple[int, int] | None = None,
+        size: int = 64,
     ) -> None:
         self.text, self.sub, self.color, self.hold = text, sub, color, hold
+        self.size = size
         self.age = 0.0
         self.active = True
         self.center = center or (theme.WIDTH // 2, theme.HEIGHT // 2)
@@ -300,7 +303,7 @@ class Banner:
             return
         pop = ease_out_back(min(1.0, self.age / 0.35))
         fade = 1.0 if self.age < self.hold else max(0.0, 1 - (self.age - self.hold) / 0.5)
-        graphic = neon_text(self.text, "display", 64, self.color, 16)
+        graphic = neon_text(self.text, "display", self.size, self.color, max(8, self.size // 4))
         if pop < 0.999:
             scale = max(0.05, pop)
             for layer in (graphic.halo, graphic.core):
@@ -310,9 +313,12 @@ class Banner:
         else:
             graphic.draw(surface, self.center, fade)
         if self.sub:
-            sub = fonts.get("display", 30).render(self.sub, True, theme.WHITE)
+            sub = fonts.get("display", max(18, self.size * 30 // 64)).render(
+                self.sub, True, theme.WHITE
+            )
             sub.set_alpha(round(255 * fade * min(1.0, self.age / 0.4)))
-            surface.blit(sub, sub.get_rect(center=(self.center[0], self.center[1] + 58)))
+            offset = self.size * 58 // 64
+            surface.blit(sub, sub.get_rect(center=(self.center[0], self.center[1] + offset)))
 
 
 class Toast:
