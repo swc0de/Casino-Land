@@ -1,7 +1,8 @@
 # Neon Royale Casino
 
-A single-player desktop casino with a Vegas neon look: **Roulette, Blackjack and Texas
-Hold'em**. Built with Python and pygame-ce. Every card, chip, light and sound is
+A single-player desktop casino in the style of a classic high-roller room: **Roulette,
+Blackjack and Texas Hold'em** on green baize, under warm light, with mahogany rails, padded
+leather, brass and gold leaf. Built with Python and pygame-ce. Every card, chip, light and sound is
 generated in code.
 
 > **Play money only.** Neon Royale uses virtual chips with no cash value. There are no
@@ -15,15 +16,17 @@ generated in code.
 
 ## Features
 
-- **Title screen:** a brass-framed marquee sign strikes up letter by letter, with neon buzz,
-  chasing bulbs, and one tired tube that sputters now and then.
-- **Lobby:** three illustrated game cabinets with their own bulb borders, hover animations
-  and a rolling bankroll counter. Broke? Claim free chips from the house.
+- **Entrance:** a lacquered sign edged in gold and ringed with chasing Vegas marquee bulbs,
+  hung on red velvet, with the name in gold-leaf Roman capitals.
+- **Casino floor:** the lobby is the room seen from above: roulette, blackjack and poker
+  tables with their chairs, under pendant lights on ornate casino carpet, each with a
+  brass name plate. Broke? Claim free chips from the house.
 - **Three complete games** with casino-standard rules (below), animated dealing, chip
   movement, payouts, and big-win celebrations (fanfare, confetti, bulb frenzy).
-- **Procedural art:** all 52 cards (original art-deco court cards), casino chips from 50¢
-  to $25K stacked in 2.5D, a numbered roulette wheel, felts, backdrops and neon glow. No
-  image files.
+- **Procedural art:** all 52 cards (original art-deco court cards, classic red backs),
+  casino chips from 50¢ to $25K stacked in 2.5D, a numbered roulette wheel, wood grain,
+  padded leather, velvet, carpet, brass plaques and engraved gold lettering. No image
+  files.
 - **Procedural sound:** chip clacks, card snaps, a riffle shuffle, wheel rumble, ball
   ticks, win jingles, a big-win fanfare and a casino-floor ambience loop, all synthesised
   with numpy at start-up in a background thread.
