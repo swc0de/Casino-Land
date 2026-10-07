@@ -78,13 +78,46 @@ def test_scene_manager_fades_and_swaps_at_midpoint() -> None:
     assert log[-1] == "event b"
 
 
-def test_title_click_goes_to_lobby() -> None:
+def test_title_click_skips_intro_then_enters_lobby() -> None:
     app = App(AppOptions(mute=True))
     app.scenes.switch(app.make_scene("title"))
+    _post_click((640, 360))  # first click skips the sign's power-on intro
+    _pump(app)
     _post_click((640, 360))
     for _ in range(60):
         for event in pygame.event.get():
             app._handle_event(event)
         app.scenes.update(1 / 60)
     assert type(app.scenes.top).__name__ == "LobbyScene"
+    pygame.quit()
+
+
+def _pump(app: App, frames: int = 2) -> None:
+    for _ in range(frames):
+        for event in pygame.event.get():
+            app._handle_event(event)
+        app.scenes.update(1 / 60)
+        app.scenes.draw(app.screen)
+
+
+def test_lobby_comp_and_closed_tables() -> None:
+    from neon_royale.core.save import COMP_AMOUNT
+
+    app = App(AppOptions(mute=True))
+    app.casino.wallet.debit(app.casino.balance)
+    app.scenes.switch(app.make_scene("lobby"))
+    lobby = app.scenes.top
+    _pump(app)
+    assert lobby.comp_button.visible
+    _post_click(lobby.comp_button.rect.center)
+    _pump(app)
+    assert app.casino.balance == COMP_AMOUNT
+    _pump(app)
+    assert not lobby.comp_button.visible
+
+    closed = [c for c in lobby.cabinets if c.info.key not in REGISTRY]
+    if closed:
+        _post_click(closed[0].rect.center)
+        _pump(app)
+        assert lobby.toast.items, "a closed table explains itself"
     pygame.quit()
