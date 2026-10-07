@@ -247,6 +247,8 @@ class CountingLabel:
     def draw(self, surface: pygame.Surface) -> pygame.Rect:
         color = lerp_color(self.color, self.flash_color, self.flash)
         value = round(self.shown)
+        if self.start % 100 == 0 and self.target % 100 == 0:
+            value = round(value / 100) * 100  # don't flash stray cents while rolling
         text = fonts.get("display", self.size).render(fmt(value), True, color)
         rect = text.get_rect(**{self.anchor: self.pos})
         if self.caption:
