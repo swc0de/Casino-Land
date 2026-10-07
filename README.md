@@ -1,3 +1,102 @@
 # Neon Royale Casino
 
-A neon Vegas casino for the desktop: Roulette, Blackjack and Texas Hold'em. Play money only.
+A single-player desktop casino with a Vegas neon look: **Roulette, Blackjack and Texas
+Hold'em**. Built with Python and pygame-ce. Every card, chip, light and sound is
+generated in code.
+
+> **Play money only.** Neon Royale uses virtual chips with no cash value. There are no
+> purchases, no real-money features and nothing to win.
+
+## Status
+
+| Milestone | State |
+|---|---|
+| 0. Scaffold: window, loop, scenes, save system, CI | ✅ |
+| 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ⏳ |
+| 2. Roulette | ⏳ |
+| 3. Blackjack | ⏳ |
+| 4. Poker engine | ⏳ |
+| 5. Poker table | ⏳ |
+| 6. Polish | ⏳ |
+
+## Install and run
+
+Requires Python 3.11 or newer.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -e .
+neon-royale                        # or: python -m neon_royale
+```
+
+Useful options:
+
+| Option | Effect |
+|---|---|
+| `--fullscreen` / `--windowed` | Override the saved display setting |
+| `--mute` | Start with audio off |
+| `--scene lobby` | Jump straight to a screen |
+| `--seed 42` | Repeatable shuffles and spins |
+| `--save PATH` | Use a different profile file |
+| `--smoke 5 --screenshot shot.png` | Run for 5 seconds, save the last frame, exit (launch check) |
+
+## Controls
+
+| Key | Action |
+|---|---|
+| Mouse | Everything: place chips, press buttons, pick tables |
+| `Esc` | Back (table → lobby → title) |
+| `F11` | Toggle fullscreen |
+| `F3` | Frame-rate overlay |
+
+## Your bankroll
+
+You start with **$10,000** in play chips. Your balance, lifetime stats and settings are
+saved automatically to:
+
+- Linux: `~/.local/share/neon-royale/save.json`
+- macOS: `~/Library/Application Support/neon-royale/save.json`
+- Windows: `%APPDATA%\neon-royale\save.json`
+
+Set `NEON_ROYALE_SAVE` to use another path. If you go broke, the house gives you a free
+$1,000 to keep playing.
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+ruff check src tests && ruff format --check src tests
+pytest                    # everything, including slow exhaustive checks
+pytest -m "not slow"      # quick run
+python -m neon_royale --smoke 3 --mute
+```
+
+Tests run headless (SDL dummy video and audio drivers), so no display is needed.
+
+### Layout
+
+```
+src/neon_royale/
+  core/      Rules and state. Pure Python, never imports pygame (a test enforces this).
+  ui/        pygame presentation: app loop, scenes, widgets, effects, procedural art.
+  audio/     numpy sound synthesis.
+  assets/    Bundled OFL fonts.
+tests/
+```
+
+Each game engine is a state machine that the screen drives with player actions and that
+reports what happened as events. The screen animates those events; it never decides
+outcomes. That keeps every rule testable without a window.
+
+Money is stored as integer cents, so fractional payouts (3:2 on a $15 blackjack is
+$22.50) are exact.
+
+## Assets
+
+See [ASSETS.md](ASSETS.md). The only third-party files are SIL OFL fonts from Google Fonts.
+
+## Licence
+
+No licence has been chosen for the game's code yet. The bundled fonts keep their own
+OFL licences.
