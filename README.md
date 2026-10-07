@@ -14,7 +14,7 @@ generated in code.
 | 0. Scaffold: window, loop, scenes, save system, CI | ✅ |
 | 1. Presentation kit: neon, marquee lights, particles, cards, chips, sound, lobby | ✅ |
 | 2. Roulette | ✅ |
-| 3. Blackjack | ⏳ |
+| 3. Blackjack | ✅ |
 | 4. Poker engine | ⏳ |
 | 5. Poker table | ⏳ |
 | 6. Polish | ⏳ |
@@ -57,6 +57,26 @@ it back. Keys: `1`-`6` pick a chip, `Space` spin, `Backspace` undo, `C` clear,
 
 The winning number is drawn by the rules engine before the wheel moves; the ball's path
 is then built backwards so it always drops into that pocket.
+
+## Blackjack
+
+Six-deck shoe, Las Vegas Strip rules:
+
+- Blackjack pays **3:2**. Bets $5 to $5,000 in whole dollars.
+- Dealer **stands on all 17s** and **peeks** for blackjack with an ace or ten showing, so
+  you never lose a double or split to a dealer natural.
+- **Insurance** (up to half your bet) pays 2:1 when the dealer shows an ace; with a
+  blackjack it's offered as **even money**.
+- **Double** on any first two cards, including after a split.
+- **Split** any two cards of equal value (so K-Q counts as a pair), up to four hands. Split
+  aces get one card each and can't be re-split; 21 after a split is not a blackjack.
+- **Late surrender** on your first two cards (half your bet back).
+- The shoe is reshuffled when the cut card (about 75% in) comes out.
+
+Click the betting circle to add the selected chip (right-click removes one). Your last
+bet stays in the circle for the next hand. Keys: `Space`/`Enter` deal, `H` hit,
+`S` stand, `D` double, `P` split, `R` surrender, `I`/`N` insurance yes/no. **HINT**
+shows the basic-strategy play for these exact rules.
 
 ## Install and run
 
