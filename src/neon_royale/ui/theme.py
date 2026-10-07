@@ -1,4 +1,7 @@
-"""Colours and layout constants for the neon look."""
+"""Colours and layout constants: a classic high-roller casino.
+
+Polished wood, padded leather, green baize, brass and gold leaf, ornate carpet.
+"""
 
 from __future__ import annotations
 
@@ -8,48 +11,47 @@ FPS = 60
 
 Color = tuple[int, int, int]
 
-# Night-sky backdrop
-INK = (6, 3, 16)
-NIGHT = (14, 8, 34)
-NIGHT_HI = (32, 16, 66)
+# Room
+INK = (10, 6, 5)
+WALNUT_DARK = (30, 15, 8)
+WALNUT = (66, 33, 16)
+MAHOGANY = (104, 40, 22)
+CARPET = (92, 12, 26)
+CARPET_DARK = (52, 6, 14)
+VELVET = (140, 14, 32)
+VELVET_DARK = (58, 4, 14)
 
-# Neon tubes
-PINK = (255, 46, 136)
-HOT_PINK = (255, 92, 170)
-CYAN = (20, 230, 255)
-ELECTRIC_BLUE = (60, 120, 255)
-PURPLE = (160, 70, 255)
-LIME = (120, 255, 90)
-ORANGE = (255, 150, 40)
-GOLD = (255, 205, 70)
-WARM_WHITE = (255, 244, 214)
+# Metals
+GOLD = (214, 176, 72)
+GOLD_LIGHT = (252, 226, 150)
+GOLD_DARK = (128, 90, 30)
+BRASS = (184, 142, 64)
+WARM_WHITE = (255, 240, 205)
 WHITE = (255, 255, 255)
 
-# Table felts and fittings
-FELT_GREEN = (10, 92, 58)
-FELT_GREEN_DARK = (5, 52, 33)
-FELT_BLUE = (14, 52, 110)
-FELT_BLUE_DARK = (7, 26, 60)
-FELT_RED = (110, 16, 36)
-FELT_RED_DARK = (58, 7, 20)
-RAIL = (52, 24, 14)
-RAIL_HI = (120, 64, 30)
-BRASS = (196, 150, 72)
+# Tables
+FELT_GREEN = (16, 98, 56)
+FELT_GREEN_DARK = (6, 46, 26)
+FELT_BURGUNDY = (104, 16, 30)
+FELT_BURGUNDY_DARK = (50, 6, 14)
+LEATHER = (26, 20, 18)
+LEATHER_HI = (84, 70, 62)
 
 # Text
-TEXT = (238, 234, 255)
-TEXT_DIM = (160, 150, 196)
-TEXT_MUTED = (104, 96, 140)
+TEXT = (244, 232, 204)  # cream
+TEXT_DIM = (196, 178, 140)
+TEXT_MUTED = (140, 122, 96)
+INK_TEXT = (40, 24, 10)  # engraved on brass
 
 # Outcomes
-WIN = (90, 255, 140)
-LOSE = (255, 80, 90)
-PUSH = (255, 210, 90)
+WIN = (126, 222, 130)
+LOSE = (236, 92, 84)
+PUSH = GOLD_LIGHT
 
 # Roulette pockets
-ROULETTE_RED = (196, 24, 42)
-ROULETTE_BLACK = (18, 16, 24)
-ROULETTE_GREEN = (8, 136, 72)
+ROULETTE_RED = (180, 20, 34)
+ROULETTE_BLACK = (20, 18, 20)
+ROULETTE_GREEN = (10, 120, 64)
 
 
 def lerp_color(a: Color, b: Color, t: float) -> Color:
