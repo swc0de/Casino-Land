@@ -27,6 +27,9 @@ class Scene:
     def exit(self) -> None:
         """Called when the scene is removed from the stack."""
 
+    def shutdown(self) -> None:
+        """Called if the game closes while this scene is open: return chips in play."""
+
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
 

@@ -119,6 +119,12 @@ def render_board(geom: BoardGeometry) -> pygame.Surface:
 
 
 class RouletteScene(Stage):
+    help_topic = "roulette"
+    ambience = 0.45
+
+    def shutdown(self) -> None:
+        self.table.abandon()
+
     def enter(self) -> None:
         app = self.app
         self.table = RouletteTable(app.casino.wallet, app.rng)
@@ -173,6 +179,7 @@ class RouletteScene(Stage):
             hotkey=pygame.K_SPACE,
         )
         self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.add_help_button()
 
         self.hover_bet: Bet | None = None
         self.incoming: dict[Bet, Cents] = {}
@@ -518,7 +525,7 @@ class RouletteScene(Stage):
             x += radius * 2 + 6
 
     def _draw_hud(self, surface: pygame.Surface) -> None:
-        self.title.draw(surface, (WHEEL_CENTER[0] + 30, 46))
+        self.title.draw(surface, (WHEEL_CENTER[0] + 92, 46))
         panel = pygame.Rect(22, 590, 400, 116)
         draw_panel(surface, panel, (8, 4, 20, 190), theme.PURPLE, 14)
         self.balance.draw(surface)

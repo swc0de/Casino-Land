@@ -120,6 +120,12 @@ def render_table() -> pygame.Surface:
 
 
 class BlackjackScene(Stage):
+    help_topic = "blackjack"
+    ambience = 0.45
+
+    def shutdown(self) -> None:
+        self.table.abandon()
+
     def enter(self) -> None:
         app = self.app
         self.table = BlackjackTable(app.casino.wallet, app.rng)
@@ -209,6 +215,7 @@ class BlackjackScene(Stage):
             font_size=22,
         )
         self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.add_help_button()
 
         if self.table.last_bet:
             self.bet_chips = [self.table.last_bet]

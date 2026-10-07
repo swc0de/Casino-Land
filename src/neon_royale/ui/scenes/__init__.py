@@ -16,6 +16,8 @@ REGISTRY = {
     "roulette": "roulette:RouletteScene",
     "blackjack": "blackjack:BlackjackScene",
     "poker": "poker:PokerScene",
+    "settings": "overlays:SettingsScene",
+    "stats": "overlays:StatsScene",
 }
 
 

@@ -215,14 +215,42 @@ class LobbyScene(Stage):
         casino = self.app.casino
         self.balance = CountingLabel((48, 668), casino.balance, "Bankroll", "midleft", 34)
         self.comp_button = self.button(
-            (theme.WIDTH // 2 - 170, 636, 340, 52),
+            (330, 636, 330, 52),
             f"CLAIM FREE {fmt(dollars(1_000))}",
             self._claim_comp,
             color=theme.LIME,
             font_size=20,
         )
-        self.button((theme.WIDTH - 188, 640, 150, 48), "EXIT", self.app.quit, color=theme.PURPLE)
+        self.button(
+            (704, 640, 136, 48),
+            "STATS",
+            self._overlay("stats"),
+            color=theme.GOLD,
+            hotkey=pygame.K_s,
+            font_size=20,
+        )
+        self.button(
+            (852, 640, 186, 48),
+            "SETTINGS",
+            self._overlay("settings"),
+            color=theme.CYAN,
+            hotkey=pygame.K_o,
+            font_size=20,
+        )
+        self.button(
+            (theme.WIDTH - 230, 640, 186, 48),
+            "EXIT",
+            self.app.quit,
+            color=theme.PURPLE,
+            font_size=20,
+        )
         self.ambient_timer = 0.0
+
+    def _overlay(self, name: str):
+        def push() -> None:
+            self.app.scenes.push(self.app.make_scene(name))
+
+        return push
 
     def _claim_comp(self) -> None:
         amount = self.app.casino.claim_comp()
@@ -273,8 +301,6 @@ class LobbyScene(Stage):
         self.balance.set(self.app.casino.balance)
         self.balance.update(dt)
         self.comp_button.visible = self.app.casino.comp_available
-        if not self.sound.is_looping("ambience"):
-            self.sound.loop("ambience", 0.8, fade_ms=1500)
         # Lazy sparkles drifting up from the floor.
         self.ambient_timer -= dt
         if self.ambient_timer <= 0:
