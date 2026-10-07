@@ -197,7 +197,9 @@ class App:
     def _draw_fps(self) -> None:
         fps = self.clock.get_fps()
         ms = self.clock.get_rawtime()
-        label = fonts.get("body_bold", 18).render(f"{fps:5.1f} FPS  {ms:2d} ms", True, theme.LIME)
+        label = fonts.get("body_bold", 18).render(
+            f"{fps:5.1f} FPS  {ms:2d} ms", True, theme.GOLD_LIGHT
+        )
         box = label.get_rect(topright=(theme.WIDTH - 8, 6)).inflate(12, 4)
         pygame.draw.rect(self.screen, theme.INK, box, border_radius=4)
         self.screen.blit(label, label.get_rect(center=box.center))

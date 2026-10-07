@@ -115,7 +115,7 @@ def test_lobby_comp_and_closed_tables() -> None:
     _pump(app)
     assert not lobby.comp_button.visible
 
-    closed = [c for c in lobby.cabinets if c.info.key not in REGISTRY]
+    closed = [c for c in lobby.tables if c.info.key not in REGISTRY]
     if closed:
         _post_click(closed[0].rect.center)
         _pump(app)

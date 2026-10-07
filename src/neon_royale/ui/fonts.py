@@ -11,11 +11,15 @@ from .caches import surface_cache
 FONT_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
 
 ROLES = {
-    "marquee": "Monoton-Regular.ttf",  # outlined multi-line neon: big titles only
-    "display": "Bungee-Regular.ttf",  # headings, numbers, buttons
-    "body": "Rajdhani-SemiBold.ttf",
-    "body_medium": "Rajdhani-Medium.ttf",
-    "body_bold": "Rajdhani-Bold.ttf",
+    "logo": "CinzelDecorative-Black.ttf",  # ornate Roman capitals: the casino's name
+    "title": "CinzelDecorative-Bold.ttf",
+    "display": "PlayfairDisplaySC-Bold.ttf",  # headings, buttons, numbers
+    "display_black": "PlayfairDisplaySC-Black.ttf",
+    "body": "Lato-Regular.ttf",
+    "body_medium": "Lato-Regular.ttf",
+    "body_bold": "Lato-Bold.ttf",
+    "body_black": "Lato-Black.ttf",
+    "numbers": "Lato-Black.ttf",  # lining figures for chips, pockets and money
 }
 
 

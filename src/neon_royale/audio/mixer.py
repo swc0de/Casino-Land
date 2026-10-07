@@ -23,7 +23,6 @@ LOOP_CHANNELS = 4  # reserved for wheel, ball and ambience loops
 _ORDER = (
     "ui_hover",
     "ui_click",
-    "neon_buzz",
     "whoosh",
     "chip_clack",
     "chip_stack",
@@ -45,7 +44,7 @@ _ORDER = (
 )
 
 # Minimum gap between repeats of the same sound, so bursts don't pile up into noise.
-_MIN_GAP = {"ui_hover": 0.05, "neon_buzz": 0.15, "chip_clack": 0.03, "ball_tick": 0.02}
+_MIN_GAP = {"ui_hover": 0.05, "chip_clack": 0.03, "ball_tick": 0.02}
 
 _DTYPES = {8: np.uint8, -8: np.int8, 16: np.uint16, -16: np.int16, 32: np.float32, -32: np.int32}
 

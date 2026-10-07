@@ -9,7 +9,7 @@ import pygame
 
 from ...core.money import fmt
 from .. import fonts, theme
-from ..fx.glow import neon_text
+from ..render.decor import crown, engraved_text, ornament_rule
 from ..stage import Stage
 from ..widgets import Slider, draw_panel
 
@@ -21,7 +21,7 @@ class Overlay(Stage):
     overlay = True
     ambience = None  # leave the room's ambience as it is
 
-    def __init__(self, app: App, title: str, size: tuple[int, int], color=theme.CYAN) -> None:
+    def __init__(self, app: App, title: str, size: tuple[int, int], color=theme.GOLD) -> None:
         super().__init__(app)
         self.title = title
         self.color = color
@@ -48,9 +48,13 @@ class Overlay(Stage):
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(self.shade, (0, 0))
-        draw_panel(surface, self.panel, (14, 8, 32, 248), self.color, 20, 3)
-        title = neon_text(self.title, "display", 32, self.color, 10)
-        title.draw(surface, (self.panel.centerx, self.panel.top + 44))
+        draw_panel(surface, self.panel, (26, 14, 9, 250), theme.GOLD, 20, 4)
+        inner = self.panel.inflate(-18, -18)
+        pygame.draw.rect(surface, theme.GOLD_DARK, inner, 1, border_radius=14)
+        title = engraved_text(self.title, "display", 32, "gold", glow=0.3)
+        title.draw(surface, (self.panel.centerx, self.panel.top + 46))
+        ornament_rule(surface, (self.panel.centerx, self.panel.top + 76), 300)
+        crown(surface, (self.panel.centerx, self.panel.top - 2), 44)
 
     def draw_top(self, surface: pygame.Surface) -> None:
         self.draw_buttons(surface)
@@ -59,7 +63,7 @@ class Overlay(Stage):
 
 class SettingsScene(Overlay):
     def __init__(self, app: App) -> None:
-        super().__init__(app, "SETTINGS", (640, 520), theme.CYAN)
+        super().__init__(app, "SETTINGS", (640, 520))
         settings = app.settings
         left = self.panel.left + 300
         top = self.panel.top + 110
@@ -82,7 +86,6 @@ class SettingsScene(Overlay):
                 (left + 150, y - 4, 110, 40),
                 "",
                 lambda a=attr: self._toggle(a),
-                color=theme.LIME,
                 font_size=18,
             )
             self.toggles.append((label, attr, button))
@@ -91,14 +94,14 @@ class SettingsScene(Overlay):
             (self.panel.left + 40, self.panel.bottom - 76, 260, 50),
             "RESET BANKROLL",
             self._reset,
-            color=theme.LOSE,
+            kind="danger",
             font_size=18,
         )
         self.button(
             (self.panel.right - 200, self.panel.bottom - 76, 160, 50),
             "DONE",
             self.close,
-            color=theme.CYAN,
+            kind="primary",
             hotkey=pygame.K_RETURN,
         )
 
@@ -126,7 +129,7 @@ class SettingsScene(Overlay):
         self.app.save()
         self.confirm_reset = False
         self.reset_button.label = "RESET BANKROLL"
-        self.toast.show(f"Fresh start: {fmt(self.app.casino.balance)} in chips", theme.LIME)
+        self.toast.show(f"Fresh start: {fmt(self.app.casino.balance)} in chips", theme.GOLD_LIGHT)
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         if super().handle_event(event):
@@ -138,7 +141,7 @@ class SettingsScene(Overlay):
         for _, attr, button in self.toggles:
             on = bool(getattr(self.app.settings, attr))
             button.label = "ON" if on else "OFF"
-            button.color = theme.LIME if on else theme.TEXT_MUTED
+            button.kind = "primary" if on else "secondary"
 
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)
@@ -162,12 +165,12 @@ class StatsScene(Overlay):
     GAMES = (("roulette", "Roulette"), ("blackjack", "Blackjack"), ("poker", "Hold'em"))
 
     def __init__(self, app: App) -> None:
-        super().__init__(app, "YOUR RECORD", (760, 440), theme.GOLD)
+        super().__init__(app, "YOUR RECORD", (760, 440))
         self.button(
             (self.panel.centerx - 80, self.panel.bottom - 74, 160, 50),
             "DONE",
             self.close,
-            color=theme.GOLD,
+            kind="primary",
             hotkey=pygame.K_RETURN,
         )
 
@@ -235,14 +238,14 @@ def wrap(text: str, font: pygame.font.Font, width: int) -> list[str]:
 
 class HelpScene(Overlay):
     def __init__(self, app: App, title: str, rules: Sequence[str], keys: Sequence[str]) -> None:
-        super().__init__(app, title, (820, 540), theme.PINK)
+        super().__init__(app, title, (820, 540))
         self.rules = rules
         self.keys = keys
         self.button(
             (self.panel.centerx - 80, self.panel.bottom - 72, 160, 50),
             "GOT IT",
             self.close,
-            color=theme.PINK,
+            kind="primary",
             hotkey=pygame.K_RETURN,
         )
 
@@ -255,7 +258,11 @@ class HelpScene(Overlay):
         for rule in self.rules:
             for i, line in enumerate(wrap(rule, font, width - 22)):
                 if i == 0:
-                    pygame.draw.circle(surface, theme.PINK, (x + 6, y + 13), 4)
+                    pygame.draw.polygon(
+                        surface,
+                        theme.GOLD,
+                        [(x + 6, y + 7), (x + 11, y + 12), (x + 6, y + 17), (x + 1, y + 12)],
+                    )
                 text = font.render(line, True, theme.TEXT)
                 surface.blit(text, (x + 22, y))
                 y += 27

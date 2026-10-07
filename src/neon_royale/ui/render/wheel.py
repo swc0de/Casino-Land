@@ -51,7 +51,7 @@ def wheel_face(diameter: int) -> pygame.Surface:
     c = (r, r)
     surf = pygame.Surface((size, size), pygame.SRCALPHA)
     half = POCKET_ANGLE / 2
-    font = fonts.get("display", round(r * 0.105))
+    font = fonts.get("numbers", round(r * 0.105))
     for i, number in enumerate(WHEEL_ORDER):
         a = i * POCKET_ANGLE
         base = POCKET_COLORS[color_of(number)]

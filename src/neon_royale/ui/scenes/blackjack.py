@@ -12,27 +12,32 @@ from ...core.blackjack import Action, BlackjackTable, Outcome, Phase, RuleError
 from ...core.money import Cents, fmt
 from .. import fonts, theme
 from ..caches import optimise
-from ..fx.glow import NeonGraphic, neon_text
-from ..fx.marquee import Marquee
 from ..fx.tween import ease_in_out_cubic, ease_out_back, ease_out_cubic
-from ..render.backdrop import felt
 from ..render.cards import card_back
 from ..render.chips import draw_amount
+from ..render.decor import (
+    draw_gilded_frame,
+    engraved_text,
+    lacquer_panel,
+    padded_ellipse,
+    table_background,
+    wood,
+)
 from ..sprites import CardSprite
 from ..stage import Stage
 from ..theme import Color
 from ..widgets import ChipRack, CountingLabel, draw_panel
 
 CARD_W = 92
-SHOE_POS = (1118, 128)
-DISCARD_POS = (150, 128)
+SHOE_POS = (1150, 158)
+DISCARD_POS = (130, 196)
 DEALER_Y = 165
-HAND_Y = 425
-BET_Y = 566
+HAND_Y = 415
+BET_Y = 548
 ARC_CENTER = (640, -420)
 BANNER_AT = (640, 262)
 ARC_RADIUS = 690
-BALANCE_POS = (40, 672)
+BALANCE_POS = (62, 676)
 DEALER_CHIPS = (640, 72)
 
 OUTCOME_STYLE: dict[Outcome, tuple[str, Color]] = {
@@ -77,22 +82,67 @@ def _arc_text(
         angle -= w / radius
 
 
+ARMREST = pygame.Rect(-380, 604, 2040, 1400)  # the padded rail along the player side
+
+CHIP_TRAY_COLORS = (
+    (236, 236, 240),
+    (206, 30, 44),
+    (20, 140, 74),
+    (30, 30, 38),
+    (114, 46, 182),
+    (246, 182, 32),
+)
+
+
+def _chip_tray(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    """The dealer's float: rows of chips lying in a wooden tray."""
+    surface.blit(wood(rect.size, theme.WALNUT, 3), rect)
+    pygame.draw.rect(surface, (10, 4, 2), rect, 3, border_radius=8)
+    slots = 12
+    slot_w = (rect.width - 20) / slots
+    for i in range(slots):
+        color = CHIP_TRAY_COLORS[(i // 2) % len(CHIP_TRAY_COLORS)]
+        slot = pygame.Rect(0, 0, slot_w - 6, rect.height - 16)
+        slot.topleft = (rect.left + 10 + i * slot_w + 3, rect.top + 8)
+        pygame.draw.rect(surface, (14, 6, 2), slot.inflate(4, 4), border_radius=6)
+        pygame.draw.rect(surface, color, slot, border_radius=5)
+        edge = theme.scale_color(color, 0.65)
+        for y in range(slot.top + 3, slot.bottom - 2, 5):
+            pygame.draw.line(surface, edge, (slot.left + 2, y), (slot.right - 3, y), 1)
+        pygame.draw.line(
+            surface,
+            (255, 255, 255),
+            (slot.left + 3, slot.top + 2),
+            (slot.left + 3, slot.bottom - 3),
+            1,
+        )
+    draw_gilded_frame(surface, rect.inflate(6, 6), 2, 10)
+
+
+def _box(surface: pygame.Surface, center: tuple[int, int], label: str) -> pygame.Rect:
+    box = pygame.Rect(0, 0, 124, 152)
+    box.center = center
+    shadow = pygame.Surface((box.width + 30, box.height + 30), pygame.SRCALPHA)
+    pygame.draw.rect(shadow, (0, 0, 0, 150), shadow.get_rect().inflate(-24, -24), border_radius=16)
+    surface.blit(pygame.transform.box_blur(shadow, 8), (box.left - 9, box.top - 6))
+    lacquer_panel(surface, box, (70, 10, 18), 255, True, 14)
+    text = fonts.get("body_bold", 12).render(" ".join(label), True, theme.GOLD)
+    surface.blit(text, text.get_rect(center=(box.centerx, box.bottom - 12)))
+    return box
+
+
 def render_table() -> pygame.Surface:
-    surf = felt(theme.SIZE, theme.FELT_BLUE, theme.FELT_BLUE_DARK, seed=21)
-    print_color = (220, 230, 255)
-    mask = pygame.Surface(theme.SIZE, pygame.SRCALPHA)
-    pygame.draw.circle(mask, (255, 255, 255), ARC_CENTER, ARC_RADIUS, 4)
-    arc = NeonGraphic(mask, theme.CYAN, 12)
-    arc.halo.set_alpha(190)
-    surf.blit(arc.halo, (-arc.margin, -arc.margin))
-    surf.blit(arc.core, (-arc.margin, -arc.margin))
+    surf = table_background(theme.FELT_GREEN, theme.FELT_GREEN_DARK, seed=21).copy()
+    print_color = (236, 224, 190)
+    pygame.draw.circle(surf, theme.GOLD, ARC_CENTER, ARC_RADIUS, 2)
+    pygame.draw.circle(surf, theme.GOLD_DARK, ARC_CENTER, ARC_RADIUS + 110, 1)
     _arc_text(
         surf,
         "BLACKJACK PAYS 3 TO 2",
         ARC_CENTER,
         ARC_RADIUS + 34,
-        fonts.get("display", 28),
-        theme.GOLD,
+        fonts.get("display", 30),
+        theme.GOLD_LIGHT,
         1.06,
     )
     _arc_text(
@@ -100,22 +150,20 @@ def render_table() -> pygame.Surface:
         "DEALER MUST STAND ON ALL 17s  ·  INSURANCE PAYS 2 TO 1",
         ARC_CENTER,
         ARC_RADIUS + 80,
-        fonts.get("body_bold", 22),
+        fonts.get("body_bold", 21),
         print_color,
-        1.04,
+        1.06,
     )
-    # Shoe and discard tray.
-    shoe = pygame.Rect(0, 0, 120, 150)
-    shoe.center = SHOE_POS
-    pygame.draw.rect(surf, (20, 12, 30), shoe.inflate(10, 10), border_radius=14)
-    pygame.draw.rect(surf, theme.BRASS, shoe.inflate(10, 10), 3, border_radius=14)
+    _chip_tray(surf, pygame.Rect(430, 34, 420, 54))
+    _box(surf, SHOE_POS, "SHOE")
     back = card_back(CARD_W)
     for i in range(4):
-        surf.blit(back, back.get_rect(center=(SHOE_POS[0] - 6 + i * 3, SHOE_POS[1] - i * 2)))
-    tray = pygame.Rect(0, 0, 120, 150)
-    tray.center = DISCARD_POS
-    pygame.draw.rect(surf, (10, 22, 50), tray, border_radius=12)
-    pygame.draw.rect(surf, (90, 120, 180), tray, 2, border_radius=12)
+        surf.blit(back, back.get_rect(center=(SHOE_POS[0] - 6 + i * 3, SHOE_POS[1] - 8 - i * 2)))
+    _box(surf, DISCARD_POS, "DISCARDS")
+    # Padded leather armrest on the player's side.
+    pygame.draw.ellipse(surf, (16, 10, 8), ARMREST)
+    padded_ellipse(surf, ARMREST, 30)
+    pygame.draw.ellipse(surf, theme.GOLD_DARK, ARMREST.inflate(-62, -62), 1)
     return optimise(surf)
 
 
@@ -130,15 +178,6 @@ class BlackjackScene(Stage):
         app = self.app
         self.table = BlackjackTable(app.casino.wallet, app.rng)
         self.background = render_table()
-        self.title = neon_text("BLACKJACK", "display", 30, theme.CYAN, 10)
-        self.marquee = Marquee(
-            pygame.Rect(10, 10, theme.WIDTH - 20, theme.HEIGHT - 20),
-            spacing=34,
-            radius=4,
-            pattern="chase",
-            speed=5,
-            rng=app.rng,
-        )
         self.rack = ChipRack((640, 652), self.sound, diameter=52)
         self.balance = CountingLabel(BALANCE_POS, app.casino.balance, "Bankroll", "midleft", 32)
         self.toast.y = 262  # between the dealer's cards and the player's
@@ -157,24 +196,22 @@ class BlackjackScene(Stage):
         y = 622
         b = self.button
         # Betting.
-        self.btn_clear = b(
-            (870, y, 120, 52), "CLEAR", self.clear_bet, color=theme.CYAN, hotkey=pygame.K_c
-        )
+        self.btn_clear = b((870, y, 120, 52), "CLEAR", self.clear_bet, hotkey=pygame.K_c)
         self.btn_deal = b(
             (1006, y - 6, 220, 64),
             "DEAL",
             self.deal,
-            color=theme.GOLD,
+            kind="primary",
             font_size=30,
             hotkey=pygame.K_SPACE,
         )
         # Player decisions.
         actions = (
-            ("HIT", Action.HIT, pygame.K_h, theme.LIME),
-            ("STAND", Action.STAND, pygame.K_s, theme.PINK),
-            ("DOUBLE", Action.DOUBLE, pygame.K_d, theme.GOLD),
-            ("SPLIT", Action.SPLIT, pygame.K_p, theme.CYAN),
-            ("SURRENDER", Action.SURRENDER, pygame.K_r, theme.PURPLE),
+            ("HIT", Action.HIT, pygame.K_h, "primary"),
+            ("STAND", Action.STAND, pygame.K_s, "primary"),
+            ("DOUBLE", Action.DOUBLE, pygame.K_d, "secondary"),
+            ("SPLIT", Action.SPLIT, pygame.K_p, "secondary"),
+            ("SURRENDER", Action.SURRENDER, pygame.K_r, "danger"),
         )
         self.action_buttons: dict[Action, object] = {}
         x = 330
@@ -184,7 +221,7 @@ class BlackjackScene(Stage):
                 (x, y, width, 54),
                 label,
                 lambda a=action: self.act(a),
-                color=color,
+                kind=color,
                 hotkey=key,
                 font_size=21,
             )
@@ -193,7 +230,6 @@ class BlackjackScene(Stage):
             (x, y, 110, 54),
             "HINT",
             self.hint,
-            color=theme.TEXT_DIM,
             hotkey=pygame.K_QUESTION,
             font_size=20,
         )
@@ -202,7 +238,7 @@ class BlackjackScene(Stage):
             (430, y, 250, 54),
             "INSURANCE",
             self.insure,
-            color=theme.GOLD,
+            kind="primary",
             hotkey=pygame.K_i,
             font_size=22,
         )
@@ -210,11 +246,10 @@ class BlackjackScene(Stage):
             (700, y, 250, 54),
             "NO THANKS",
             self.no_insurance,
-            color=theme.PINK,
             hotkey=pygame.K_n,
             font_size=22,
         )
-        self.button((24, 24, 130, 44), "LOBBY", self.leave, color=theme.PINK, font_size=18)
+        self.button((40, 38, 130, 44), "LOBBY", self.leave, font_size=18)
         self.add_help_button()
 
         if self.table.last_bet:
@@ -319,7 +354,7 @@ class BlackjackScene(Stage):
             return
         best = bj.basic_strategy(self.table.hand, self.table.upcard, self.table.legal_actions())
         self.sound.play("ui_click")
-        self.toast.show(f"Basic strategy says: {best.value.upper()}", theme.CYAN)
+        self.toast.show(f"Basic strategy says: {best.value.upper()}", theme.GOLD_LIGHT)
 
     def leave(self) -> None:
         if self.mode not in ("betting",):
@@ -392,7 +427,7 @@ class BlackjackScene(Stage):
         """Animate engine events in order, then hand control back to the player."""
         for event in events:
             if isinstance(event, bj.Shuffled):
-                self.toast.show("Shuffling a fresh shoe…", theme.CYAN)
+                self.toast.show("Shuffling a fresh shoe…", theme.GOLD_LIGHT)
                 self.sound.play("shuffle")
                 yield 1.1
             elif isinstance(event, bj.CardDealt):
@@ -499,17 +534,15 @@ class BlackjackScene(Stage):
         self._refresh_balance()
         if Outcome.BLACKJACK in outcomes:
             self.sound.play("blackjack")
-            self.marquee.celebrate(3.0)
-            self.particles.confetti(pygame.Rect(0, 0, theme.WIDTH, 40), 110)
+            self.celebrate(3.0, big=True)
             self.banner.show("BLACKJACK!", "", theme.GOLD, hold=1.6, center=BANNER_AT)
         elif event.net >= self.table.last_bet * 4 and event.net > 0:
             self.sound.play("win_big")
-            self.marquee.celebrate(3.5)
-            self.particles.confetti(pygame.Rect(0, 0, theme.WIDTH, 40), 140)
+            self.celebrate(3.5, big=True)
             self.banner.show("BIG WIN!", "", theme.GOLD, hold=1.8, center=BANNER_AT)
         elif event.net > 0:
             self.sound.play("win")
-            self.marquee.celebrate(1.2)
+            self.celebrate(1.2)
             self.banner.show("YOU WIN", "", theme.WIN, hold=1.2, center=BANNER_AT)
         elif event.net == 0 and event.returned:
             self.sound.play("push", 0.7)
@@ -545,7 +578,7 @@ class BlackjackScene(Stage):
         self._refresh_balance()
         self._sync_buttons()
         if self.app.casino.comp_available and not self.bet_chips:
-            self.toast.show("Out of chips? The lobby has a gift for you.", theme.LIME)
+            self.toast.show("Out of chips? The lobby has a gift for you.", theme.GOLD_LIGHT)
 
     # -- frame ----------------------------------------------------------------------------
 
@@ -589,7 +622,6 @@ class BlackjackScene(Stage):
 
     def update(self, dt: float) -> None:
         super().update(dt)
-        self.marquee.update(dt)
         self.rack.update(dt)
         self.balance.update(dt)
         for key, (text, color, age) in list(self.labels.items()):
@@ -602,12 +634,13 @@ class BlackjackScene(Stage):
         if self.mode == "betting":
             pulse = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(self.t * 4)) if not self.bet_chips else 1.0
             pygame.draw.circle(surface, theme.GOLD, (640, BET_Y), 42, 3)
-            ring = neon_text("BET", "display", 18, theme.GOLD, 6)
+            pygame.draw.circle(surface, theme.GOLD_DARK, (640, BET_Y), 36, 1)
+            ring = engraved_text("BET", "display", 20, "gold", shadow=2)
             if not self.bet_chips:
                 ring.draw(surface, (640, BET_Y), pulse)
             else:
                 draw_amount(surface, self.pending_bet, (640, BET_Y + 18), 40)
-                amount = fonts.get("display", 22).render(fmt(self.pending_bet), True, theme.WHITE)
+                amount = fonts.get("numbers", 22).render(fmt(self.pending_bet), True, theme.TEXT)
                 surface.blit(amount, amount.get_rect(midleft=(700, BET_Y)))
             return
         for i in range(len(self.stacks)):
@@ -617,7 +650,8 @@ class BlackjackScene(Stage):
                 bob = 4 * math.sin(self.t * 6)
                 tip = (x, BET_Y + 48 + bob)
                 points = [tip, (tip[0] - 12, tip[1] + 16), (tip[0] + 12, tip[1] + 16)]
-                pygame.draw.polygon(surface, theme.CYAN, points)
+                pygame.draw.polygon(surface, theme.GOLD_LIGHT, points)
+                pygame.draw.polygon(surface, theme.GOLD_DARK, points, 2)
 
     def _draw_stack(self, surface: pygame.Surface, stack: Stack) -> None:
         if stack.alpha <= 0.02 or stack.amount <= 0:
@@ -631,7 +665,7 @@ class BlackjackScene(Stage):
         surface.blit(layer, (stack.pos[0] - 100, stack.pos[1] + 18 - 150))
 
     def _draw_totals(self, surface: pygame.Surface) -> None:
-        font = fonts.get("display", 20)
+        font = fonts.get("numbers", 19)
         if self.dealer_cards:
             total = bj.hand_value(
                 [s.card for s in self.dealer_cards if s.flip >= 0.5 and s.card is not None]
@@ -656,39 +690,40 @@ class BlackjackScene(Stage):
 
     def _badge(self, surface, text, center, color, font, glow: bool = False) -> None:
         label = font.render(text, True, color)
-        box = label.get_rect(center=center).inflate(22, 10)
-        draw_panel(surface, box, (8, 6, 24, 220), theme.CYAN if glow else (90, 90, 140), 10)
+        box = label.get_rect(center=center).inflate(24, 10)
+        lacquer_panel(surface, box, (18, 10, 6), 235, True, 10, glow=0.8 if glow else 0.0)
         surface.blit(label, label.get_rect(center=box.center))
 
     def _draw_labels(self, surface: pygame.Surface) -> None:
         for i, (text, color, age) in self.labels.items():
             pop = ease_out_back(min(1.0, age / 0.3))
-            graphic = neon_text(text, "display", 26, color, 10)
+            style = {theme.WIN: "emerald", theme.LOSE: "ruby"}.get(color, "gold")
+            if color in (theme.TEXT_DIM, theme.TEXT):
+                style = "cream"
+            graphic = engraved_text(text, "display", 26, style, shadow=2)
             y = HAND_Y - 112 - 10 * (1 - pop)
             w, h = graphic.content_size
             pill = pygame.Rect(0, 0, w + 28, h + 6)
             pill.center = (round(self.hand_x(i)), round(y))
-            draw_panel(surface, pill, (6, 6, 20, round(200 * min(1.0, age / 0.2))), None, 16)
+            draw_panel(surface, pill, (14, 8, 6, round(215 * min(1.0, age / 0.2))), None, 16)
             graphic.draw(surface, (self.hand_x(i), y), min(1.0, age / 0.2))
 
     def _draw_hud(self, surface: pygame.Surface) -> None:
-        self.title.draw(surface, (640, 40))
-        panel = pygame.Rect(22, 604, 286, 102)
-        draw_panel(surface, panel, (8, 4, 20, 190), theme.PURPLE, 14)
+        panel = pygame.Rect(40, 624, 268, 82)
+        draw_panel(surface, panel, (20, 11, 7, 235), theme.GOLD, 14, 2)
         self.balance.draw(surface)
         info = fonts.get("body", 17).render(
-            f"Bets {fmt(self.table.min_bet)} - {fmt(self.table.max_bet)}  ·  6 decks",
+            f"Bets {fmt(self.table.min_bet)} - {fmt(self.table.max_bet)}",
             True,
             theme.TEXT_MUTED,
         )
-        surface.blit(info, info.get_rect(center=(640, 72)))
+        surface.blit(info, info.get_rect(center=(SHOE_POS[0], SHOE_POS[1] + 120)))
         left = self.table.shoe.remaining
         shoe = fonts.get("body_bold", 17).render(f"{left} cards in shoe", True, theme.TEXT_DIM)
-        surface.blit(shoe, shoe.get_rect(center=(SHOE_POS[0], SHOE_POS[1] + 92)))
+        surface.blit(shoe, shoe.get_rect(center=(SHOE_POS[0], SHOE_POS[1] + 96)))
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.blit(self.background, (0, 0))
-        self.marquee.draw(surface)
         self._draw_bet_circles(surface)
         for stack in self.stacks:
             self._draw_stack(surface, stack)
@@ -705,4 +740,5 @@ class BlackjackScene(Stage):
             self.rack.draw(surface, self.t)
         self._draw_hud(surface)
         self.draw_buttons(surface)
+        self.draw_celebration(surface)
         self.draw_overlays(surface)

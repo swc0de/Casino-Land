@@ -12,12 +12,9 @@ from neon_royale.core.cards import Card, Rank, Suit, full_deck
 from neon_royale.core.chips import DENOMINATIONS
 from neon_royale.core.money import dollars
 from neon_royale.ui import caches
-from neon_royale.ui.fx.glow import neon_frame, neon_text
 from neon_royale.ui.fx.marquee import LEVELS, Marquee, bulb_sprites, perimeter_points
-from neon_royale.ui.fx.neon import Flicker, NeonSign
 from neon_royale.ui.fx.particles import ParticleSystem
-from neon_royale.ui.fx.signboard import SignBoard
-from neon_royale.ui.render import backdrop, cards, chips
+from neon_royale.ui.render import backdrop, cards, chips, decor
 from neon_royale.ui.widgets import Button, ChipRack, CountingLabel, Slider
 
 
@@ -64,16 +61,6 @@ def test_stacks_split_into_columns() -> None:
     assert area.width > 0 and area.bottom <= 300
 
 
-def test_neon_graphics_are_padded_for_their_halo() -> None:
-    graphic = neon_text("HELLO", "display", 32, (255, 0, 128), 10)
-    w, h = graphic.content_size
-    assert graphic.size == (w + 40, h + 40)
-    frame = neon_frame((200, 100), (0, 255, 255))
-    surface = pygame.Surface((400, 300))
-    rect = frame.draw(surface, (200, 150), 0.5)
-    assert rect.center == (200, 150)
-
-
 def test_perimeter_points_are_on_the_rectangle() -> None:
     rect = pygame.Rect(10, 20, 300, 100)
     points = perimeter_points(rect, 25)
@@ -98,36 +85,6 @@ def test_marquee_patterns_stay_in_range() -> None:
     assert len(bulb_sprites((255, 255, 255), 5)) == LEVELS
 
 
-def test_flicker_power_on_ends_lit_and_reports_strikes() -> None:
-    strikes = []
-    flicker = Flicker(random.Random(4), stutter_rate=0.0, on_stutter=lambda: strikes.append(1))
-    flicker.power_on(delay=0.2)
-    assert flicker.value == 0.0 or flicker.level == 0.0
-    for _ in range(120):
-        flicker.update(1 / 60)
-    assert flicker.level == 1.0
-    assert flicker.value > 0.9
-    assert strikes, "striking a tube should trigger the buzz callback"
-    flicker.power_off()
-    assert flicker.value == 0.0
-
-
-def test_sign_board_intro_and_skip() -> None:
-    board = SignBoard(pygame.Rect(0, 0, 800, 240), "NEON", random.Random(2), subtitle="CASINO")
-    board.power_on(delay=0.5, duration=1.0)
-    assert not board.lit
-    board.skip_intro()
-    assert board.lit
-    board.update(0.1)
-    board.draw(pygame.Surface((800, 240)))
-
-
-def test_neon_sign_measures_its_letters() -> None:
-    sign = NeonSign("AB C", "display", 40, (255, 0, 0), random.Random(0))
-    assert len(sign.letters) == 3, "spaces take room but have no tube"
-    assert sign.width > 0
-
-
 def test_particles_expire() -> None:
     system = ParticleSystem(random.Random(0), limit=50)
     system.burst((100, 100), count=30, life=(0.2, 0.3))
@@ -142,8 +99,6 @@ def test_particles_expire() -> None:
 
 def test_backdrops_render() -> None:
     assert backdrop.felt((320, 180)).get_size() == (320, 180)
-    assert backdrop.casino_night(400).get_size() == (1280, 720)
-    assert backdrop.wood_rail((100, 20)).get_size() == (100, 20)
 
 
 def _click(widget, pos: tuple[int, int]) -> None:
@@ -209,3 +164,41 @@ def test_slider_drag() -> None:
     slider.handle_event(pygame.event.Event(pygame.MOUSEBUTTONUP, pos=(400, 10), button=1))
     assert values == [0.25, 1.0]
     slider.draw(pygame.Surface((220, 40)))
+
+
+def test_engraved_lettering_is_padded_and_cached() -> None:
+    text = decor.engraved_text("ROYALE", "logo", 40, "gold", glow=0.5)
+    w, h = text.content_size
+    assert text.size == (w + 2 * text.margin, h + 2 * text.margin)
+    assert decor.engraved_text("ROYALE", "logo", 40, "gold", glow=0.5) is text
+    surface = pygame.Surface((400, 200))
+    assert text.draw(surface, (200, 100), 0.5).center == (200, 100)
+    # The metallic face is gold: warm, much more red than blue, and opaque.
+    block = pygame.Surface((20, 40), pygame.SRCALPHA)
+    block.fill((255, 255, 255, 255))
+    r, _, b, a = decor.metallic(block, decor.GOLD_RAMP).get_at((10, 20))
+    assert r > b + 80 and a == 255
+    for style in ("cream", "silver", "ruby", "emerald"):
+        decor.engraved_text("A", "display", 20, style)
+
+
+def test_furnishings_render() -> None:
+    assert decor.carpet((300, 200)).get_size() == (300, 200)
+    assert decor.velvet((300, 200)).get_size() == (300, 200)
+    assert decor.wood((120, 30)).get_size() == (120, 30)
+    assert decor.wood((30, 120), vertical=True).get_size() == (30, 120)
+    assert (
+        decor.light_pool((200, 100)).get_at((100, 50)).a
+        > decor.light_pool((200, 100)).get_at((2, 2)).a
+    )
+    assert decor.brass_plaque((200, 40), "ROULETTE").get_size() == (200, 40)
+    assert decor.table_background().get_size() == (1280, 720)
+    surface = pygame.Surface((400, 300), pygame.SRCALPHA)
+    decor.padded_ellipse(surface, pygame.Rect(20, 20, 300, 200), 20)
+    decor.padded_band(surface, pygame.Rect(0, 250, 400, 20))
+    decor.lacquer_panel(surface, pygame.Rect(10, 10, 120, 50), glow=0.5)
+    decor.draw_gilded_frame(surface, pygame.Rect(150, 10, 120, 50), glow=0.8)
+    decor.ornament_rule(surface, (200, 150), 200)
+    decor.crown(surface, (200, 100), 60)
+    decor.wood_tray(surface, pygame.Rect(10, 200, 200, 40))
+    decor.scatter_sparkles(surface, surface.get_rect(), 1.0)
