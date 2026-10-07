@@ -33,3 +33,8 @@ uses it unmodified.
 | Sound effects and ambience | `src/neon_royale/audio/` |
 
 Code-generated assets are part of this project's source and carry no third-party licence.
+
+## Screenshots
+
+`docs/screenshots/*.jpg` are captures of the game itself, produced by
+`tools/screenshots.py`. They contain only the fonts and generated art listed above.
